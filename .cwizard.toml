@@ -1,0 +1,7 @@
+
+[registry]
+use = "cw"
+section = "gitmoji"
+
+[registries.cw]
+url = "https://github.com/kitechsoftware/commit-wizard-registry.git"

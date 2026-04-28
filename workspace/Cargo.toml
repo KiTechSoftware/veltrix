@@ -1,0 +1,19 @@
+[workspace]
+members = ["veltrix"]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/kitechsoftware/veltrix"
+homepage = "https://github.com/kitechsoftware/veltrix"
+documentation = "https://docs.rs/veltrix"
+readme = "../README.md"
+keywords = ["cli", "terminal", "prompt", "output", "markdown"]
+categories = ["command-line-interface"]
+
+[workspace.dependencies]
+veltrix = { path = "./veltrix", features = ["full"] }
+
+thiserror = "2.0.18"

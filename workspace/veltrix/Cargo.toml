@@ -1,0 +1,21 @@
+[package]
+name = "veltrix"
+description = "General utilities"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[features]
+default = []
+paths = []
+users = []
+full = ["paths", "users"]
+
+[dependencies]
+thiserror.workspace = true
