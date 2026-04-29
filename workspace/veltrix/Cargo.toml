@@ -14,8 +14,10 @@ categories.workspace = true
 [features]
 default = []
 paths = []
-users = []
-full = ["paths", "users"]
+emojis = []
+unistd = ["dep:libc"]
+full = ["paths", "unistd", "emojis"]
 
 [dependencies]
 thiserror.workspace = true
+libc = {version = "0.2.186", optional = true}
