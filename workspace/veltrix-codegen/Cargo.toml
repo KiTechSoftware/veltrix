@@ -1,0 +1,11 @@
+[package]
+name = "veltrix-codegen"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+heck = "0.5"
+clap = { version = "4.5", features = ["derive"] }
+quick-xml = "0.37"

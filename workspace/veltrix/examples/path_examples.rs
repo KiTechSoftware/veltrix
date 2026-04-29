@@ -1,4 +1,3 @@
-
 fn main() -> veltrix::Result<()> {
     println!(
         "User bin path for 'mybin': {}",

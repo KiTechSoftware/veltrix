@@ -5,8 +5,17 @@ use std::{
 
 use crate::error::{Result, VeltrixError};
 
-// System-wide paths
+// Common names
 
+pub const APPLICATIONS_DIR_NAME: &str = "applications";
+pub const SYSTEMD_DIR_NAME: &str = "systemd";
+pub const ICONS_DIR_NAME: &str = "icons";
+pub const BIN_DIR_NAME: &str = "bin";
+
+// System-wide paths
+pub const PATH_SYSTEM_ROOT: &str = "/";
+pub const PATH_SYSTEM_ROOT_HOME: &str = "/root";
+pub const PATH_SYSTEM_HOME: &str = "/home";
 pub const PATH_SYSTEM_BIN: &str = "/usr/bin";
 pub const PATH_SYSTEM_LOCAL_BIN: &str = "/usr/local/bin";
 pub const PATH_SYSTEM_LIB_DIR: &str = "/usr/lib";
@@ -32,6 +41,23 @@ pub const XDG_STATE_DIR_ENV: &str = "XDG_STATE_HOME";
 pub const XDG_CACHE_DIR_ENV: &str = "XDG_CACHE_HOME";
 pub const XDG_DATA_DIR_ENV: &str = "XDG_DATA_HOME";
 pub const XDG_RUNTIME_DIR_ENV: &str = "XDG_RUNTIME_DIR";
+
+// User-level defaults
+pub const USER_HOME_DIR: &str = "~";
+pub const USER_CONFIG_DIR: &str = ".config";
+pub const USER_STATE_DIR: &str = ".local/state";
+pub const USER_CACHE_DIR: &str = ".cache";
+pub const USER_DATA_DIR: &str = ".local/share";
+pub const USER_BIN_DIR: &str = ".local/bin";
+pub const USER_APPLICATIONS_DIR: &str = ".local/share/applications";
+pub const USER_ICONS_DIR: &str = ".local/share/icons";
+pub const USER_SYSTEMD_UNIT_DIR: &str = ".config/systemd/user";
+
+// File extensions
+pub const EXT_SEPERATOR: &str = ".";
+pub const APPLICATION_DESKTOP_EXT: &str = "desktop";
+pub const SYSTEMD_UNIT_EXT: &str = "service";
+pub const MAN_PAGE_EXT: &str = "1.gz";
 
 // System-wide paths
 
@@ -84,11 +110,13 @@ pub fn system_doc_dir(app_name: &str) -> PathBuf {
 }
 
 pub fn system_man1_path(bin_name: &str) -> PathBuf {
-    PathBuf::from(PATH_SYSTEM_MAN1_DIR).join(format!("{bin_name}.1.gz"))
+    PathBuf::from(PATH_SYSTEM_MAN1_DIR).join(format!("{bin_name}{EXT_SEPERATOR}{MAN_PAGE_EXT}"))
 }
 
 pub fn system_desktop_entry_path(app_name: &str) -> PathBuf {
-    PathBuf::from(PATH_SYSTEM_APPLICATIONS_DIR).join(format!("{app_name}.desktop"))
+    PathBuf::from(PATH_SYSTEM_APPLICATIONS_DIR).join(format!(
+        "{app_name}{EXT_SEPERATOR}{APPLICATION_DESKTOP_EXT}"
+    ))
 }
 
 pub fn system_icon_dir(app_name: &str) -> PathBuf {
@@ -100,13 +128,13 @@ pub fn systemd_unit_path(app_name: &str) -> PathBuf {
 }
 
 pub fn systemd_unit_name(app_name: &str) -> String {
-    format!("{app_name}.service")
+    format!("{app_name}{EXT_SEPERATOR}{SYSTEMD_UNIT_EXT}")
 }
 
 // User-level resolved paths
 
 pub fn user_config_dir(app_name: &str) -> Result<PathBuf> {
-    xdg_dir(XDG_CONFIG_DIR_ENV, &[".config"], app_name)
+    xdg_dir(XDG_CONFIG_DIR_ENV, &[USER_CONFIG_DIR], app_name)
 }
 
 pub fn user_config_path(app_name: &str, config_file_name: &str) -> Result<PathBuf> {
@@ -114,15 +142,15 @@ pub fn user_config_path(app_name: &str, config_file_name: &str) -> Result<PathBu
 }
 
 pub fn user_state_dir(app_name: &str) -> Result<PathBuf> {
-    xdg_dir(XDG_STATE_DIR_ENV, &[".local", "state"], app_name)
+    xdg_dir(XDG_STATE_DIR_ENV, &[USER_STATE_DIR], app_name)
 }
 
 pub fn user_cache_dir(app_name: &str) -> Result<PathBuf> {
-    xdg_dir(XDG_CACHE_DIR_ENV, &[".cache"], app_name)
+    xdg_dir(XDG_CACHE_DIR_ENV, &[USER_CACHE_DIR], app_name)
 }
 
 pub fn user_data_dir(app_name: &str) -> Result<PathBuf> {
-    xdg_dir(XDG_DATA_DIR_ENV, &[".local", "share"], app_name)
+    xdg_dir(XDG_DATA_DIR_ENV, &[USER_DATA_DIR], app_name)
 }
 
 pub fn user_runtime_dir(app_name: &str) -> Result<PathBuf> {
@@ -145,7 +173,7 @@ pub fn user_log_dir(app_name: &str) -> Result<PathBuf> {
 }
 
 pub fn user_bin_dir() -> Result<PathBuf> {
-    Ok(home_dir()?.join(".local").join("bin"))
+    Ok(home_dir()?.join(BIN_DIR_NAME))
 }
 
 pub fn user_bin_path(bin_name: &str) -> Result<PathBuf> {
@@ -153,7 +181,7 @@ pub fn user_bin_path(bin_name: &str) -> Result<PathBuf> {
 }
 
 pub fn user_systemd_unit_dir() -> Result<PathBuf> {
-    Ok(xdg_dir(XDG_CONFIG_DIR_ENV, &[".config"], "systemd")?.join("user"))
+    Ok(xdg_dir(XDG_CONFIG_DIR_ENV, &[USER_CONFIG_DIR], SYSTEMD_DIR_NAME)?.join("user"))
 }
 
 pub fn user_systemd_unit_path(app_name: &str) -> Result<PathBuf> {
@@ -161,11 +189,13 @@ pub fn user_systemd_unit_path(app_name: &str) -> Result<PathBuf> {
 }
 
 pub fn user_desktop_entry_path(app_name: &str) -> Result<PathBuf> {
-    Ok(user_data_dir("applications")?.join(format!("{app_name}.desktop")))
+    Ok(user_data_dir(APPLICATIONS_DIR_NAME)?.join(format!(
+        "{app_name}{EXT_SEPERATOR}{APPLICATION_DESKTOP_EXT}"
+    )))
 }
 
 pub fn user_icon_dir(app_name: &str) -> Result<PathBuf> {
-    Ok(user_data_dir("icons")?.join(app_name))
+    Ok(user_data_dir(ICONS_DIR_NAME)?.join(app_name))
 }
 
 // Config resolution
@@ -228,22 +258,27 @@ pub fn app_runtime_dir(app_name: &str) -> Result<PathBuf> {
 
 // Helpers
 
-fn home_dir() -> Result<PathBuf> {
+pub fn expand_user_path(path: &str) -> Result<PathBuf> {
+    if path.starts_with(USER_HOME_DIR) {
+        Ok(home_dir()?.join(path.trim_start_matches(USER_HOME_DIR)))
+    } else {
+        Ok(PathBuf::from(path))
+    }
+}
+
+pub fn home_dir() -> Result<PathBuf> {
     let path = env::var_os(USER_HOME_ENV)
         .map(PathBuf::from)
         .ok_or_else(|| VeltrixError::env_missing(USER_HOME_ENV))?;
 
     if !path.is_absolute() {
-        return Err(VeltrixError::env_invalid(
-            USER_HOME_ENV,
-            "must be absolute",
-        ));
+        return Err(VeltrixError::env_invalid(USER_HOME_ENV, "must be absolute"));
     }
 
     Ok(path)
 }
 
-fn xdg_dir(env_key: &str, fallback: &[&str], app_dir: &str) -> Result<PathBuf> {
+pub fn xdg_dir(env_key: &str, fallback: &[&str], app_dir: &str) -> Result<PathBuf> {
     if let Some(value) = env::var_os(env_key) {
         let path = PathBuf::from(value);
 

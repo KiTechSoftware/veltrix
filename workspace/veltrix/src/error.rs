@@ -19,10 +19,7 @@ pub enum VeltrixError {
 
     /// Environment variable contains an invalid path.
     #[error("invalid environment variable `{name}`: {reason}")]
-    EnvInvalid {
-        name: &'static str,
-        reason: String,
-    },
+    EnvInvalid { name: &'static str, reason: String },
 
     /// Config is invalid.
     #[error("invalid config: {reason}")]
@@ -30,10 +27,7 @@ pub enum VeltrixError {
 
     /// Path is invalid for the requested operation.
     #[error("invalid path `{path}`: {reason}")]
-    InvalidPath {
-        path: PathBuf,
-        reason: String,
-    },
+    InvalidPath { path: PathBuf, reason: String },
 }
 
 impl VeltrixError {
