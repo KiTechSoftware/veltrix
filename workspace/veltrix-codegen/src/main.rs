@@ -19,19 +19,19 @@ enum Command {
         #[arg(default_value = "latest")]
         version: String,
 
-        /// Input Unicode emoji file. (emoji-test.txt or emoji-test-<version>.txt)
+        /// Input Unicode emoji file. (emoji-test.txt or emoji-test-[version].txt)
         ///
         /// Defaults to:
         /// - data/unicode-emoji.txt for latest
-        /// - data/unicode-emoji-<version>.txt otherwise
+        /// - data/unicode-emoji-[version].txt otherwise
         #[arg(long)]
         input: Option<PathBuf>,
 
-        /// CLDR annotations XML file (unicode-cldr-en.xml or unicode-cldr-en-<version>.xml)
+        /// CLDR annotations XML file (unicode-cldr-en.xml or unicode-cldr-en-[version].xml)
         ///
         /// Defaults to:
         /// - data/unicode-cldr-en.xml for latest
-        /// - data/unicode-cldr-en-<version>.xml otherwise
+        /// - data/unicode-cldr-en-[version].xml otherwise
         #[arg(long)]
         cldr: Option<PathBuf>,
 

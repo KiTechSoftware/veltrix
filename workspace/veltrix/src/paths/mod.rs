@@ -1,3 +1,9 @@
+//! Path helpers and common platform constants.
+//!
+//! This module centralizes well-known system and user path constants
+//! and provides helpers to resolve system-wide and per-user paths using
+//! environment variables (XDG) or sane defaults.
+
 use std::{
     env,
     path::{Path, PathBuf},
@@ -7,9 +13,13 @@ use crate::error::{Result, VeltrixError};
 
 // Common names
 
+/// Name used for application data directories (e.g. `~/.local/share/<app>`).
 pub const APPLICATIONS_DIR_NAME: &str = "applications";
+/// User systemd unit directory name (under config).
 pub const SYSTEMD_DIR_NAME: &str = "systemd";
+/// Icon directories name.
 pub const ICONS_DIR_NAME: &str = "icons";
+/// Default user-local binary directory name.
 pub const BIN_DIR_NAME: &str = "bin";
 
 // System-wide paths
@@ -133,6 +143,9 @@ pub fn systemd_unit_name(app_name: &str) -> String {
 
 // User-level resolved paths
 
+/// Resolve the user's configuration directory for `app_name`.
+///
+/// This consults `$XDG_CONFIG_HOME` and falls back to `~/.config`.
 pub fn user_config_dir(app_name: &str) -> Result<PathBuf> {
     xdg_dir(XDG_CONFIG_DIR_ENV, &[USER_CONFIG_DIR], app_name)
 }
@@ -157,7 +170,6 @@ pub fn user_runtime_dir(app_name: &str) -> Result<PathBuf> {
     let path = env::var_os(XDG_RUNTIME_DIR_ENV)
         .map(PathBuf::from)
         .ok_or_else(|| VeltrixError::env_missing(XDG_RUNTIME_DIR_ENV))?;
-
     if !path.is_absolute() {
         return Err(VeltrixError::env_invalid(
             XDG_RUNTIME_DIR_ENV,
@@ -172,6 +184,7 @@ pub fn user_log_dir(app_name: &str) -> Result<PathBuf> {
     Ok(user_state_dir(app_name)?.join("logs"))
 }
 
+/// Resolve the user's local `bin` directory, typically `~/.local/bin`.
 pub fn user_bin_dir() -> Result<PathBuf> {
     Ok(home_dir()?.join(BIN_DIR_NAME))
 }
@@ -180,6 +193,7 @@ pub fn user_bin_path(bin_name: &str) -> Result<PathBuf> {
     Ok(user_bin_dir()?.join(bin_name))
 }
 
+/// Resolve the path to the user's systemd unit directory (e.g. `~/.config/systemd/user`).
 pub fn user_systemd_unit_dir() -> Result<PathBuf> {
     Ok(xdg_dir(XDG_CONFIG_DIR_ENV, &[USER_CONFIG_DIR], SYSTEMD_DIR_NAME)?.join("user"))
 }
@@ -222,6 +236,9 @@ pub fn resolve_config_path(
     Ok(user_path)
 }
 
+/// Resolve the canonical new config path depending on whether `system` is true.
+///
+/// When `system` is true this returns the system config path, otherwise the per-user path.
 pub fn resolve_new_config_path(
     app_name: &str,
     config_file_name: &str,

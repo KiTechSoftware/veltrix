@@ -1,9 +1,17 @@
+//! Error types returned by Veltrix helpers.
+//!
+//! The crate exposes a small `VeltrixError` enumeration for common
+//! failure modes (I/O, missing environment variables, invalid config,
+//! and invalid paths) and a `Result<T>` alias to simplify signatures.
+
 use std::path::PathBuf;
 
 use thiserror::Error;
 
+/// Result alias used across the crate: `Result<T>` == `std::result::Result<T, VeltrixError>`.
 pub type Result<T> = std::result::Result<T, VeltrixError>;
 
+/// A compact set of errors commonly returned by Veltrix helpers.
 #[derive(Debug, Error)]
 pub enum VeltrixError {
     /// I/O operation failed.
@@ -17,11 +25,11 @@ pub enum VeltrixError {
     #[error("missing environment variable `{name}`")]
     EnvMissing { name: &'static str },
 
-    /// Environment variable contains an invalid path.
+    /// Environment variable contains an invalid value.
     #[error("invalid environment variable `{name}`: {reason}")]
     EnvInvalid { name: &'static str, reason: String },
 
-    /// Config is invalid.
+    /// Configuration value is invalid.
     #[error("invalid config: {reason}")]
     ConfigInvalid { reason: String },
 
@@ -31,10 +39,12 @@ pub enum VeltrixError {
 }
 
 impl VeltrixError {
+    /// Construct a `EnvMissing` error for the given environment variable name.
     pub fn env_missing(name: &'static str) -> Self {
         Self::EnvMissing { name }
     }
 
+    /// Construct an `EnvInvalid` error with a reason message.
     pub fn env_invalid(name: &'static str, reason: impl Into<String>) -> Self {
         Self::EnvInvalid {
             name,
@@ -42,12 +52,14 @@ impl VeltrixError {
         }
     }
 
+    /// Construct a `ConfigInvalid` error with the given reason.
     pub fn config_invalid(reason: impl Into<String>) -> Self {
         Self::ConfigInvalid {
             reason: reason.into(),
         }
     }
 
+    /// Construct an `InvalidPath` error for a path and reason.
     pub fn invalid_path(path: impl Into<PathBuf>, reason: impl Into<String>) -> Self {
         Self::InvalidPath {
             path: path.into(),
