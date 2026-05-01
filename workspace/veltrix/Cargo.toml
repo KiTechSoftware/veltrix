@@ -19,6 +19,9 @@ async = ["tokio/process"]
 podman = ["serde", "serde_json"]
 podman-socket = ["podman", "async", "tokio/net", "tokio/io-util"]
 
+docker = ["serde", "serde_json"]
+docker-socket = ["docker", "async", "tokio/net", "tokio/io-util"]
+
 caddy = ["async", "serde", "serde_json", "reqwest/json", "tokio/net", "tokio/io-util"]
 
 systemd = []

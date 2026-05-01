@@ -1,10 +1,13 @@
 //! Service integrations.
 //!
 //! This module contains typed clients for local/system services such as
-//! Podman, Caddy, systemd, and Technitium DNS.
+//! Podman, Docker, Caddy, systemd, and Technitium DNS.
 
 #[cfg(feature = "podman")]
 pub mod podman;
+
+#[cfg(feature = "docker")]
+pub mod docker;
 
 #[cfg(feature = "caddy")]
 pub mod caddy;
