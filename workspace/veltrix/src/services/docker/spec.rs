@@ -1,7 +1,5 @@
 use std::path::PathBuf;
 
-use crate::error::Result;
-
 pub const SUPPORTED_DOCKER_API_VERSION: &str = "1.40";
 
 /// Docker backend specification for CLI-based execution
@@ -96,9 +94,17 @@ impl DockerComposeSpec {
 /// Metadata describing which Docker backend was used for a response
 #[derive(Debug, Clone)]
 pub enum DockerBackendUsed {
-    Cli { binary: String, sudo: bool },
-    Socket { socket_path: PathBuf },
-    Compose { binary: String, compose_file: Option<String> },
+    Cli {
+        binary: String,
+        sudo: bool,
+    },
+    Socket {
+        socket_path: PathBuf,
+    },
+    Compose {
+        binary: String,
+        compose_file: Option<String>,
+    },
 }
 
 /// Standard response wrapper for Docker API calls

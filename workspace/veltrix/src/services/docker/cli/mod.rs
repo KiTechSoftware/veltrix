@@ -3,7 +3,7 @@ mod with_async;
 
 use crate::error::Result;
 
-use super::spec::{DockerBackendUsed, DockerCliSpec, DockerEmptyResponse, DockerResponse};
+use super::spec::{DockerCliSpec, DockerResponse};
 use super::types::{DockerContainerSummary, DockerInfo, DockerVersion};
 
 #[allow(unused_imports)]
