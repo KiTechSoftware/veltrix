@@ -2,7 +2,8 @@
 //!
 //! The crate exposes a small `VeltrixError` enumeration for common
 //! failure modes (I/O, missing environment variables, invalid config,
-//! and invalid paths) and a `Result<T>` alias to simplify signatures.
+//! invalid paths, and service integration errors) and a `Result<T>` alias
+//! to simplify signatures.
 
 use std::path::PathBuf;
 
@@ -36,6 +37,30 @@ pub enum VeltrixError {
     /// Path is invalid for the requested operation.
     #[error("invalid path `{path}`: {reason}")]
     InvalidPath { path: PathBuf, reason: String },
+
+    /// Service response parsing failed.
+    #[error("parsing failed: {0}")]
+    Parsing(String),
+
+    /// A service-specific operation failed.
+    #[error("{service} service failed: {reason}")]
+    Service { service: String, reason: String },
+
+    /// Unix socket communication failed.
+    #[error("socket failed: {reason}")]
+    Socket { reason: String },
+
+    /// HTTP API request failed.
+    #[error("http request failed with status {status}: {reason}")]
+    Http { status: u16, reason: String },
+
+    /// Authentication or credential handling failed.
+    #[error("authentication failed: {reason}")]
+    Auth { reason: String },
+
+    /// Configuration or request input failed validation.
+    #[error("validation failed for `{field}`: {reason}")]
+    Validation { field: String, reason: String },
 }
 
 impl VeltrixError {
@@ -63,6 +88,49 @@ impl VeltrixError {
     pub fn invalid_path(path: impl Into<PathBuf>, reason: impl Into<String>) -> Self {
         Self::InvalidPath {
             path: path.into(),
+            reason: reason.into(),
+        }
+    }
+
+    /// Construct a `Parsing` error with the given reason.
+    pub fn parsing(reason: impl Into<String>) -> Self {
+        Self::Parsing(reason.into())
+    }
+
+    /// Construct a `Service` error for a named service and reason.
+    pub fn service(service: impl Into<String>, reason: impl Into<String>) -> Self {
+        Self::Service {
+            service: service.into(),
+            reason: reason.into(),
+        }
+    }
+
+    /// Construct a `Socket` error with the given reason.
+    pub fn socket(reason: impl Into<String>) -> Self {
+        Self::Socket {
+            reason: reason.into(),
+        }
+    }
+
+    /// Construct an `Http` error with a status code and reason.
+    pub fn http(status: u16, reason: impl Into<String>) -> Self {
+        Self::Http {
+            status,
+            reason: reason.into(),
+        }
+    }
+
+    /// Construct an `Auth` error with the given reason.
+    pub fn auth(reason: impl Into<String>) -> Self {
+        Self::Auth {
+            reason: reason.into(),
+        }
+    }
+
+    /// Construct a `Validation` error for a field and reason.
+    pub fn validation(field: impl Into<String>, reason: impl Into<String>) -> Self {
+        Self::Validation {
+            field: field.into(),
             reason: reason.into(),
         }
     }
@@ -107,6 +175,48 @@ mod tests {
         let err = VeltrixError::invalid_path("relative/path", "must be absolute");
         assert!(err.to_string().contains("relative/path"));
         assert!(err.to_string().contains("must be absolute"));
+    }
+
+    #[test]
+    fn parsing_message() {
+        let err = VeltrixError::parsing("invalid json");
+        assert_eq!(err.to_string(), "parsing failed: invalid json");
+    }
+
+    #[test]
+    fn service_message() {
+        let err = VeltrixError::service("podman", "command failed");
+        assert_eq!(err.to_string(), "podman service failed: command failed");
+    }
+
+    #[test]
+    fn socket_message() {
+        let err = VeltrixError::socket("connection refused");
+        assert_eq!(err.to_string(), "socket failed: connection refused");
+    }
+
+    #[test]
+    fn http_message() {
+        let err = VeltrixError::http(401, "unauthorized");
+        assert_eq!(
+            err.to_string(),
+            "http request failed with status 401: unauthorized"
+        );
+    }
+
+    #[test]
+    fn auth_message() {
+        let err = VeltrixError::auth("missing token");
+        assert_eq!(err.to_string(), "authentication failed: missing token");
+    }
+
+    #[test]
+    fn validation_message() {
+        let err = VeltrixError::validation("name", "must not be empty");
+        assert_eq!(
+            err.to_string(),
+            "validation failed for `name`: must not be empty"
+        );
     }
 
     #[test]
