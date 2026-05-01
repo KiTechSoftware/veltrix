@@ -1,5 +1,7 @@
 use std::collections::BTreeMap;
 
+use super::labels::PodmanLabel;
+
 /// Podman auto-update label key recognized by `podman auto-update`.
 pub const PODMAN_AUTO_UPDATE_LABEL: &str = "io.containers.autoupdate";
 
@@ -116,11 +118,24 @@ impl QuadletUnit {
 
     /// Add an auto-update label to a container Quadlet.
     pub fn auto_update(self, policy: PodmanAutoUpdatePolicy) -> Self {
-        self.entry(
-            "Container",
-            "Label",
-            format!("{PODMAN_AUTO_UPDATE_LABEL}={}", policy.as_label_value()),
-        )
+        self.label(PodmanLabel::auto_update(policy))
+    }
+
+    /// Add a label to a container Quadlet.
+    pub fn label(self, label: PodmanLabel) -> Self {
+        self.entry("Container", "Label", label.as_label_arg())
+    }
+
+    /// Add multiple labels to a container Quadlet.
+    pub fn labels<I>(mut self, labels: I) -> Self
+    where
+        I: IntoIterator<Item = PodmanLabel>,
+    {
+        for label in labels {
+            self = self.label(label);
+        }
+
+        self
     }
 
     /// Return this unit's Quadlet kind.
@@ -176,6 +191,7 @@ mod tests {
     fn container_quadlet_renders_expected_file() {
         let unit = QuadletUnit::container("web", "docker.io/library/caddy:latest")
             .entry("Container", "PublishPort", "8080:80")
+            .label(PodmanLabel::new("com.example.role", "web").expect("label is valid"))
             .auto_update(PodmanAutoUpdatePolicy::Registry)
             .entry("Service", "Restart", "always");
 
@@ -185,6 +201,7 @@ mod tests {
         assert!(rendered.contains("[Container]\n"));
         assert!(rendered.contains("Image=docker.io/library/caddy:latest\n"));
         assert!(rendered.contains("PublishPort=8080:80\n"));
+        assert!(rendered.contains("Label=com.example.role=web\n"));
         assert!(rendered.contains("Label=io.containers.autoupdate=registry\n"));
         assert!(rendered.contains("[Service]\nRestart=always\n"));
     }

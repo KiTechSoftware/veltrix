@@ -162,13 +162,19 @@ Typed integrations for local and self-hosted service management (Podman, Docker,
 ```rust
 // Example: Podman (requires "podman" feature)
 use veltrix::services::podman::{
-    PodmanAutoUpdatePolicy, PodmanCliClient, PodmanCliSpec, QuadletUnit,
+    PodmanAutoUpdatePolicy, PodmanCliClient, PodmanCliSpec, PodmanLabel, QuadletUnit,
 };
 
 let podman = PodmanCliClient::new(PodmanCliSpec::new());
 let containers = podman.containers()?;
 
+podman.run_container_with_labels(
+    [PodmanLabel::new("com.example.role", "web")?],
+    ["docker.io/library/caddy:latest"],
+)?;
+
 let quadlet = QuadletUnit::container("web", "docker.io/library/caddy:latest")
+    .label(PodmanLabel::new("com.example.role", "web")?)
     .auto_update(PodmanAutoUpdatePolicy::Registry)
     .render();
 ```

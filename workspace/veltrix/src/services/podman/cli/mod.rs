@@ -4,6 +4,7 @@ mod with_async;
 use crate::error::{Result, VeltrixError};
 use crate::os::process::cmd::{spec::CmdSpec, std_cmd};
 
+use super::labels::{PodmanLabel, PodmanLabels, labels_to_cli_args};
 use super::quadlet::PodmanAutoUpdatePolicy;
 use super::spec::{PodmanBackendUsed, PodmanCliSpec, PodmanEmptyResponse, PodmanResponse};
 use super::types::{
@@ -81,6 +82,43 @@ impl PodmanCliClient {
                 args,
             ),
         )
+    }
+
+    /// Run a container with typed Podman labels.
+    pub fn run_container_with_labels<I, S, L>(
+        &self,
+        labels: L,
+        args: I,
+    ) -> Result<PodmanResponse<String>>
+    where
+        I: IntoIterator<Item = S>,
+        S: Into<String>,
+        L: IntoIterator<Item = PodmanLabel>,
+    {
+        let mut command_args = vec!["run".to_string()];
+        command_args.extend(labels_to_cli_args(
+            &labels.into_iter().collect::<Vec<PodmanLabel>>(),
+        ));
+        command_args.extend(args.into_iter().map(Into::into));
+
+        run_string(&self.spec, command_args)
+    }
+
+    /// Run a container with a typed Podman label collection.
+    pub fn run_container_with_label_set<I, S>(
+        &self,
+        labels: &PodmanLabels,
+        args: I,
+    ) -> Result<PodmanResponse<String>>
+    where
+        I: IntoIterator<Item = S>,
+        S: Into<String>,
+    {
+        let mut command_args = vec!["run".to_string()];
+        command_args.extend(labels.to_cli_args());
+        command_args.extend(args.into_iter().map(Into::into));
+
+        run_string(&self.spec, command_args)
     }
 
     /// Inspect a container by name or ID
@@ -511,6 +549,29 @@ mod tests {
                 "--label",
                 "io.containers.autoupdate=registry",
                 "docker.io/library/caddy:latest"
+            ])
+        );
+    }
+
+    #[test]
+    fn typed_labels_build_run_args() {
+        let labels =
+            PodmanLabels::from_pairs([("com.example.role", "web"), ("com.example.env", "dev")])
+                .expect("labels are valid");
+        let mut command_args = vec!["run".to_string()];
+        command_args.extend(labels.to_cli_args());
+        command_args.extend(["alpine", "true"].into_iter().map(str::to_string));
+
+        assert_eq!(
+            command_args,
+            strings(&[
+                "run",
+                "--label",
+                "com.example.role=web",
+                "--label",
+                "com.example.env=dev",
+                "alpine",
+                "true"
             ])
         );
     }
