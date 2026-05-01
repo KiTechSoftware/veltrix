@@ -18,9 +18,11 @@ async = ["tokio/process"]
 
 podman = ["serde", "serde_json"]
 podman-socket = ["podman", "async", "tokio/net", "tokio/io-util"]
+podman-full = ["podman", "podman-socket"]
 
 docker = ["serde", "serde_json"]
 docker-socket = ["docker", "async", "tokio/net", "tokio/io-util"]
+docker-full = ["docker", "docker-socket"]
 
 caddy = ["async", "serde", "serde_json", "reqwest/json", "tokio/net", "tokio/io-util"]
 
@@ -29,6 +31,8 @@ technitium = ["async", "serde", "serde_json", "reqwest/json"]
 
 unistd = ["libc"]
 emojis = []
+
+full = ["podman-full", "docker-full", "caddy", "systemd", "technitium", "unistd", "emojis"]
 
 [dependencies]
 thiserror = "2"
