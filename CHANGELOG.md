@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.5.0
+
+- Added first-class Podman label helpers with `PodmanLabel`, `PodmanLabels`, typed CLI label arguments, and Quadlet label rendering.
+- Implemented Docker CLI workflows for containers, images, volumes, networks, system cleanup, and disk-usage reporting.
+- Added Docker Compose client support for `up`, `down`, `logs`, and `ps`.
+- Added Docker Unix-socket Engine API client support for container, image, network, and volume workflows.
+- Added Caddy CLI wrappers for validate, fmt, reload, stop, run, adapt, and hash-password.
+- Added Caddy Admin API path patch/delete helpers for runtime config updates.
+- Added Caddy local HTTPS and reverse proxy config builders.
+- Added Caddy Admin API module listing and module config patch/delete helpers.
+
+## v0.4.1
+
+- Added legacy `emojis` feature flag over `unicode::emojis::*` for a smoother transition path. (also fixes a v0.4.0 oversight where the `emojis` feature gate was removed from the legacy path but not added to the new path)
+
 ## v0.4.0
 
 Unicode transition release.

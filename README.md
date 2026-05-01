@@ -19,13 +19,13 @@ It is designed for projects that want clean utilities without pulling in large f
 
 ```toml
 [dependencies]
-veltrix = "0.4.1"
+veltrix = "0.5.0"
 ```
 
 Optional features:
 
 ```toml
-veltrix = { version = "0.4.1", features = [
+veltrix = { version = "0.5.0", features = [
     "async",
     "podman",
     "docker",
@@ -179,10 +179,34 @@ let quadlet = QuadletUnit::container("web", "docker.io/library/caddy:latest")
     .render();
 ```
 
+```rust
+// Example: Docker (requires "docker" feature)
+use veltrix::services::docker::{DockerCliClient, DockerCliSpec, DockerComposeClient, DockerComposeSpec};
+
+let docker = DockerCliClient::new(DockerCliSpec::new());
+let containers = docker.containers()?;
+let images = docker.images()?;
+
+let compose = DockerComposeClient::new(DockerComposeSpec::new().compose_file("compose.yaml"));
+compose.up(["-d"])?;
+```
+
+```rust
+// Example: Caddy (requires "caddy" feature)
+use veltrix::services::caddy::{CaddyAdminClient, CaddyCliClient, CaddyCliSpec, CaddyConfig};
+
+let caddy = CaddyCliClient::new(CaddyCliSpec::new());
+caddy.validate(["--config", "Caddyfile"])?;
+
+let admin = CaddyAdminClient::localhost_default();
+let config = CaddyConfig::local_https_reverse_proxy("app.local", ["127.0.0.1:3000"])?;
+admin.load_config(&config).await?;
+```
+
 Supported services:
 
 * Podman (container runtime)
-* Docker (container runtime, socket, and Compose foundations)
+* Docker (container runtime, socket, and Compose workflows)
 * Caddy (web server / reverse proxy)
 * systemd (service management)
 * Technitium DNS (DNS server)
