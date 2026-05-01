@@ -33,14 +33,14 @@ where
     let output = async_cmd::run(base_cmd(spec).args(args)).await?;
 
     if !output.status.success() {
-        return Err(VeltrixError::config_invalid(format!(
-            "podman cli failed: {}",
-            String::from_utf8_lossy(&output.stderr)
-        )));
+        return Err(VeltrixError::service(
+            "podman",
+            String::from_utf8_lossy(&output.stderr).trim().to_string(),
+        ));
     }
 
     let data = serde_json::from_slice(&output.stdout)
-        .map_err(|err| VeltrixError::config_invalid(format!("invalid podman json: {err}")))?;
+        .map_err(|err| VeltrixError::parsing(format!("invalid podman json: {err}")))?;
 
     Ok(PodmanResponse {
         backend: PodmanBackendUsed::Cli {
