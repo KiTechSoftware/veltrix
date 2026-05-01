@@ -50,6 +50,15 @@ impl PodmanCliClient {
         run_json(&self.spec, ["ps", "--all", "--format", "json"])
     }
 
+    /// Run a container with caller-provided `podman run` arguments.
+    pub fn run_container<I, S>(&self, args: I) -> Result<PodmanResponse<String>>
+    where
+        I: IntoIterator<Item = S>,
+        S: Into<String>,
+    {
+        run_string(&self.spec, prefixed_args(["run"], args))
+    }
+
     /// Inspect a container by name or ID
     pub fn inspect_container(&self, container: &str) -> Result<PodmanResponse<serde_json::Value>> {
         run_json(&self.spec, ["inspect", container, "--format", "json"])
@@ -87,6 +96,17 @@ impl PodmanCliClient {
         run_exec(&self.spec, args)
     }
 
+    /// Run a container in an existing pod.
+    pub fn run_container_in_pod<I, S>(&self, pod: &str, args: I) -> Result<PodmanResponse<String>>
+    where
+        I: IntoIterator<Item = S>,
+        S: Into<String>,
+    {
+        let mut command_args = vec!["run".to_string(), "--pod".to_string(), pod.to_string()];
+        command_args.extend(args.into_iter().map(Into::into));
+        run_string(&self.spec, command_args)
+    }
+
     // ============ Pod Operations ============
 
     /// Create a pod
@@ -121,6 +141,15 @@ impl PodmanCliClient {
         run_json(&self.spec, ["images", "--format", "json"])
     }
 
+    /// Build an image with caller-provided `podman build` arguments.
+    pub fn build_image<I, S>(&self, args: I) -> Result<PodmanResponse<String>>
+    where
+        I: IntoIterator<Item = S>,
+        S: Into<String>,
+    {
+        run_string(&self.spec, prefixed_args(["build"], args))
+    }
+
     /// Inspect an image
     pub fn inspect_image(&self, image: &str) -> Result<PodmanResponse<serde_json::Value>> {
         run_json(&self.spec, ["inspect", image, "--format", "json"])
@@ -129,6 +158,16 @@ impl PodmanCliClient {
     /// Pull an image from registry
     pub fn pull_image(&self, image: &str) -> Result<PodmanResponse<String>> {
         run_string(&self.spec, ["pull", image])
+    }
+
+    /// Push an image to a registry.
+    pub fn push_image(&self, image: &str) -> Result<PodmanResponse<String>> {
+        run_string(&self.spec, ["push", image])
+    }
+
+    /// Tag an image.
+    pub fn tag_image(&self, image: &str, target: &str) -> Result<PodmanEmptyResponse> {
+        run_empty(&self.spec, ["tag", image, target])
     }
 
     /// Remove an image
@@ -141,6 +180,11 @@ impl PodmanCliClient {
     /// List all secrets
     pub fn secrets(&self) -> Result<PodmanResponse<Vec<PodmanSecretSummary>>> {
         run_json(&self.spec, ["secret", "ls", "--format", "json"])
+    }
+
+    /// Create a secret from a file or `-` for stdin.
+    pub fn create_secret(&self, name: &str, source: &str) -> Result<PodmanResponse<String>> {
+        run_string(&self.spec, ["secret", "create", name, source])
     }
 
     /// Remove a secret
@@ -170,6 +214,13 @@ impl PodmanCliClient {
         run_empty(&self.spec, ["machine", "stop", name])
     }
 
+    /// SSH into a machine and run a command.
+    pub fn machine_ssh(&self, name: &str, cmd: &[&str]) -> Result<PodmanResponse<String>> {
+        let mut args = vec!["machine", "ssh", name];
+        args.extend(cmd);
+        run_string(&self.spec, args)
+    }
+
     // ============ System Operations ============
 
     /// System prune (remove unused containers, images, networks, volumes)
@@ -188,6 +239,68 @@ impl PodmanCliClient {
     pub fn generate_kube(&self, pod_or_container: &str) -> Result<PodmanResponse<String>> {
         run_string(&self.spec, ["generate", "kube", pod_or_container])
     }
+
+    /// Play a Kubernetes YAML file.
+    pub fn play_kube(&self, yaml_path: &str) -> Result<PodmanEmptyResponse> {
+        run_empty(&self.spec, ["kube", "play", yaml_path])
+    }
+
+    /// Tear down resources created from a Kubernetes YAML file.
+    pub fn play_kube_down(&self, yaml_path: &str) -> Result<PodmanEmptyResponse> {
+        run_empty(&self.spec, ["kube", "down", yaml_path])
+    }
+
+    /// Generate legacy systemd unit output from a pod or container.
+    ///
+    /// New deployments should prefer Quadlet files. This method exists for
+    /// compatibility with Podman's legacy generated-unit workflow.
+    pub fn generate_systemd_legacy(
+        &self,
+        pod_or_container: &str,
+    ) -> Result<PodmanResponse<String>> {
+        run_string(&self.spec, ["generate", "systemd", pod_or_container])
+    }
+
+    /// Run `podman auto-update`.
+    pub fn auto_update(&self) -> Result<PodmanResponse<String>> {
+        run_string(&self.spec, ["auto-update"])
+    }
+
+    /// Run `podman compose up` with caller-provided compose arguments.
+    pub fn compose_up<I, S>(&self, args: I) -> Result<PodmanEmptyResponse>
+    where
+        I: IntoIterator<Item = S>,
+        S: Into<String>,
+    {
+        run_empty(&self.spec, prefixed_args(["compose", "up"], args))
+    }
+
+    /// Run `podman compose down`.
+    pub fn compose_down<I, S>(&self, args: I) -> Result<PodmanEmptyResponse>
+    where
+        I: IntoIterator<Item = S>,
+        S: Into<String>,
+    {
+        run_empty(&self.spec, prefixed_args(["compose", "down"], args))
+    }
+
+    /// Run `podman compose logs`.
+    pub fn compose_logs<I, S>(&self, args: I) -> Result<PodmanResponse<PodmanLogs>>
+    where
+        I: IntoIterator<Item = S>,
+        S: Into<String>,
+    {
+        run_text(&self.spec, prefixed_args(["compose", "logs"], args))
+    }
+
+    /// Run `podman compose ps`.
+    pub fn compose_ps<I, S>(&self, args: I) -> Result<PodmanResponse<String>>
+    where
+        I: IntoIterator<Item = S>,
+        S: Into<String>,
+    {
+        run_string(&self.spec, prefixed_args(["compose", "ps"], args))
+    }
 }
 
 // ============ Helper Functions ============
@@ -200,7 +313,7 @@ where
 {
     let output = run_command(spec, args)?;
     let data: T = serde_json::from_str(&output)
-        .map_err(|e| VeltrixError::config_invalid(format!("Invalid JSON: {}", e)))?;
+        .map_err(|err| VeltrixError::parsing(format!("invalid podman json: {err}")))?;
 
     Ok(PodmanResponse::new(
         data,
@@ -288,17 +401,19 @@ where
 {
     let args_vec: Vec<String> = args.into_iter().map(|s| s.into()).collect();
 
-    let cmd = if spec.sudo {
-        let mut sudo_args = vec!["sudo".to_string()];
-        sudo_args.push(spec.binary.clone());
-        sudo_args.extend(args_vec);
-        CmdSpec::new(sudo_args[0].clone()).args(&sudo_args[1..])
-    } else {
-        CmdSpec::new(&spec.binary).args(&args_vec)
-    };
+    let cmd = base_cmd(spec).args(args_vec);
 
-    let result = std_cmd(cmd)?;
-    Ok(result.stdout)
+    let result = std_cmd::run(cmd)?;
+
+    if !result.status.success() {
+        return Err(VeltrixError::service(
+            "podman",
+            String::from_utf8_lossy(&result.stderr).trim().to_string(),
+        ));
+    }
+
+    String::from_utf8(result.stdout)
+        .map_err(|err| VeltrixError::parsing(format!("invalid podman stdout utf-8: {err}")))
 }
 
 pub(super) fn base_cmd(spec: &PodmanCliSpec) -> CmdSpec {
@@ -317,4 +432,16 @@ pub(super) fn base_cmd(spec: &PodmanCliSpec) -> CmdSpec {
     }
 
     cmd
+}
+
+fn prefixed_args<P, I, S>(prefix: P, args: I) -> Vec<String>
+where
+    P: IntoIterator,
+    P::Item: Into<String>,
+    I: IntoIterator<Item = S>,
+    S: Into<String>,
+{
+    let mut command_args: Vec<String> = prefix.into_iter().map(Into::into).collect();
+    command_args.extend(args.into_iter().map(Into::into));
+    command_args
 }

@@ -117,6 +117,14 @@ pub enum PodmanBackendUsed {
         socket_path: PathBuf,
         user: Option<PodmanUser>,
     },
+    Compose {
+        binary: String,
+        compose_file: Option<PathBuf>,
+        project_name: Option<String>,
+    },
+    Machine {
+        machine_name: Option<String>,
+    },
 }
 
 #[derive(Debug, Clone)]

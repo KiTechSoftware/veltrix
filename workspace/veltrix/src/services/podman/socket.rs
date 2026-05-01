@@ -74,13 +74,14 @@ impl PodmanSocketClient {
         let body = http_unix(&self.spec.socket_path, "GET", &path, None).await?;
 
         if body.is_empty() {
-            return Err(VeltrixError::config_invalid(format!(
-                "podman endpoint returned empty body: {path}"
-            )));
+            return Err(VeltrixError::service(
+                "podman",
+                format!("podman endpoint returned empty body: {path}"),
+            ));
         }
 
         let data = serde_json::from_slice(&body)
-            .map_err(|err| VeltrixError::config_invalid(format!("invalid podman json: {err}")))?;
+            .map_err(|err| VeltrixError::parsing(format!("invalid podman json: {err}")))?;
 
         Ok(PodmanResponse {
             backend: PodmanBackendUsed::Socket {
@@ -98,7 +99,9 @@ async fn http_unix(
     path: &str,
     body: Option<&[u8]>,
 ) -> Result<Vec<u8>> {
-    let mut stream = UnixStream::connect(socket_path).await?;
+    let mut stream = UnixStream::connect(socket_path)
+        .await
+        .map_err(|err| VeltrixError::socket(format!("podman connect failed: {err}")))?;
 
     let body_len = body.map(|b| b.len()).unwrap_or(0);
 
@@ -117,14 +120,23 @@ async fn http_unix(
         request.extend_from_slice(body);
     }
 
-    stream.write_all(&request).await?;
-    stream.shutdown().await?;
+    stream
+        .write_all(&request)
+        .await
+        .map_err(|err| VeltrixError::socket(format!("podman write failed: {err}")))?;
+    stream
+        .shutdown()
+        .await
+        .map_err(|err| VeltrixError::socket(format!("podman shutdown failed: {err}")))?;
 
     let mut response = Vec::new();
-    stream.read_to_end(&mut response).await?;
+    stream
+        .read_to_end(&mut response)
+        .await
+        .map_err(|err| VeltrixError::socket(format!("podman read failed: {err}")))?;
 
     let Some(header_end) = find_header_end(&response) else {
-        return Err(VeltrixError::config_invalid(
+        return Err(VeltrixError::parsing(
             "invalid HTTP response from podman socket",
         ));
     };
@@ -143,13 +155,21 @@ async fn http_unix(
         && !status_line.contains(" 201 ")
         && !status_line.contains(" 204 ")
     {
-        return Err(VeltrixError::config_invalid(format!(
-            "podman socket request failed: {status_line}; body: {}",
-            String::from_utf8_lossy(&body)
-        )));
+        let status = parse_status_code(&status_line).unwrap_or(0);
+        return Err(VeltrixError::http(
+            status,
+            format!(
+                "podman socket request failed: {status_line}; body: {}",
+                String::from_utf8_lossy(&body)
+            ),
+        ));
     }
 
     Ok(body)
+}
+
+fn parse_status_code(status_line: &str) -> Option<u16> {
+    status_line.split_whitespace().nth(1)?.parse().ok()
 }
 
 fn find_header_end(bytes: &[u8]) -> Option<usize> {
