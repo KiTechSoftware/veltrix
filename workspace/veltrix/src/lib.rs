@@ -20,9 +20,9 @@ pub mod unicode;
 /// keeps the v0.1-v0.3 `veltrix::emojis` path available during migration.
 pub use unicode::emojis;
 
-// /// Data constants and lookup helpers, such as bools and emojis.
-// /// Planned for v0.6.0, but not yet implemented.
-// pub mod data;
+#[cfg(feature = "data")]
+/// Value-level parsing and formatting helpers.
+pub mod data;
 
 /// Re-exported result alias and primary error type for ergonomics.
 pub use error::{Result, VeltrixError as Error};
