@@ -131,6 +131,7 @@ impl CaddyAdminClient {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 struct HttpRawResponse {
     status_code: u16,
     body: Vec<u8>,

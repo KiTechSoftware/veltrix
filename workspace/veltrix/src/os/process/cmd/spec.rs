@@ -54,22 +54,22 @@ impl CmdSpec {
 
 #[cfg(feature = "unistd")]
 impl CmdSpec {
-    pub fn uid_unistd(mut self, uid: crate::unistd::Uid) -> Self {
+    pub fn uid_unistd(mut self, uid: crate::os::unistd::Uid) -> Self {
         self.uid = Some(uid.as_raw());
         self
     }
 
-    pub fn gid_unistd(mut self, gid: crate::unistd::Gid) -> Self {
+    pub fn gid_unistd(mut self, gid: crate::os::unistd::Gid) -> Self {
         self.gid = Some(gid.as_raw());
         self
     }
 
-    pub fn user(mut self, uid: crate::unistd::Uid) -> Self {
+    pub fn user(mut self, uid: crate::os::unistd::Uid) -> Self {
         self.uid = Some(uid.as_raw());
         self
     }
 
-    pub fn group(mut self, gid: crate::unistd::Gid) -> Self {
+    pub fn group(mut self, gid: crate::os::unistd::Gid) -> Self {
         self.gid = Some(gid.as_raw());
         self
     }

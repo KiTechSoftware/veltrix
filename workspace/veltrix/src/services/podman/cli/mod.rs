@@ -3,7 +3,7 @@ mod with_async;
 
 use crate::{
     error::{Result, VeltrixError},
-    process::cmd::{spec::CmdSpec, std_cmd},
+    os::process::cmd::{spec::CmdSpec, std_cmd},
 };
 
 use super::{
@@ -11,7 +11,8 @@ use super::{
     types::{PodmanContainerSummary, PodmanInfo, PodmanVersion},
 };
 
-#[cfg(feature = "async")]   
+#[allow(unused_imports)]
+#[cfg(feature = "async")]
 pub use with_async::*;
 
 #[derive(Debug, Clone)]

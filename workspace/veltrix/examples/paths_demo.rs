@@ -1,4 +1,4 @@
-use veltrix::{Result, paths};
+use veltrix::{Result, os::paths};
 
 fn main() -> Result<()> {
     let app = "veltrix-demo";

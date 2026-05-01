@@ -3,7 +3,7 @@ use std::{
     process::{Command, Output},
 };
 
-use crate::process::cmd::spec::CmdSpec;
+use crate::os::process::cmd::spec::CmdSpec;
 
 impl CmdSpec {
     pub fn to_std_command(&self) -> Command {

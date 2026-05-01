@@ -1,6 +1,6 @@
 use crate::{
     error::{Result, VeltrixError},
-    process::cmd::async_cmd,
+    os::process::cmd::async_cmd,
 };
 
 use super::{

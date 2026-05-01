@@ -31,7 +31,7 @@ impl Uid {
 
     /// Returns the raw numeric user ID.
     pub const fn as_raw(self) -> u32 {
-        self.0 as u32
+        self.0
     }
 
     /// Returns `true` if this UID is root.
@@ -48,7 +48,7 @@ impl Gid {
 
     /// Returns the raw numeric group ID.
     pub const fn as_raw(self) -> u32 {
-        self.0 as u32
+        self.0
     }
 }
 
@@ -60,7 +60,7 @@ impl Pid {
 
     /// Returns the raw numeric process ID.
     pub const fn as_raw(self) -> i32 {
-        self.0 as i32
+        self.0
     }
 }
 
@@ -195,10 +195,10 @@ pub fn primary_gid_by_uid(uid: Uid) -> Option<Gid> {
 pub fn groups_for_uid(uid: Uid) -> HashSet<String> {
     let mut groups = HashSet::new();
 
-    if let Some(primary_gid) = primary_gid_by_uid(uid) {
-        if let Some(group_name) = groupname_by_gid(primary_gid) {
-            groups.insert(group_name);
-        }
+    if let Some(primary_gid) = primary_gid_by_uid(uid)
+        && let Some(group_name) = groupname_by_gid(primary_gid)
+    {
+        groups.insert(group_name);
     }
 
     let Some(username) = username_by_uid(uid) else {

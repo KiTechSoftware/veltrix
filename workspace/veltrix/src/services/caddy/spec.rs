@@ -21,16 +21,9 @@ impl Default for CaddyAdminEndpoint {
 }
 
 #[derive(Debug, Clone)]
+#[derive(Default)]
 pub struct CaddyAdminSpec {
     pub endpoint: CaddyAdminEndpoint,
-}
-
-impl Default for CaddyAdminSpec {
-    fn default() -> Self {
-        Self {
-            endpoint: CaddyAdminEndpoint::default(),
-        }
-    }
 }
 
 impl CaddyAdminSpec {

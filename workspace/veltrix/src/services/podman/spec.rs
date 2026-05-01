@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use crate::{
     error::{Result, VeltrixError},
-    paths::XDG_RUNTIME_DIR_ENV,
+    os::paths::constants::XDG_RUNTIME_DIR_ENV,
 };
 
 pub const SUPPORTED_PODMAN_MAJOR: u64 = 5;
@@ -60,13 +60,13 @@ impl PodmanCliSpec {
     }
 
     #[cfg(feature = "unistd")]
-    pub fn user(mut self, uid: crate::unistd::Uid) -> Self {
+    pub fn user(mut self, uid: crate::os::unistd::Uid) -> Self {
         self.uid = Some(uid.as_raw());
         self
     }
 
     #[cfg(feature = "unistd")]
-    pub fn group(mut self, gid: crate::unistd::Gid) -> Self {
+    pub fn group(mut self, gid: crate::os::unistd::Gid) -> Self {
         self.gid = Some(gid.as_raw());
         self
     }

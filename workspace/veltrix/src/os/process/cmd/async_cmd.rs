@@ -3,9 +3,6 @@ use std::io;
 use super::spec::CmdSpec;
 use tokio::process::Command;
 
-#[cfg(unix)]
-use std::os::unix::process::CommandExt;
-
 impl CmdSpec {
     pub fn to_tokio_command(&self) -> Command {
         build_tokio(self)
