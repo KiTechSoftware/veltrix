@@ -69,13 +69,14 @@ impl CaddyAdminClient {
         let raw = self.request_raw(method, path, body).await?;
 
         if raw.body.is_empty() {
-            return Err(VeltrixError::config_invalid(format!(
-                "caddy endpoint returned empty body: {path}"
-            )));
+            return Err(VeltrixError::service(
+                "caddy",
+                format!("caddy endpoint returned empty body: {path}"),
+            ));
         }
 
         let data = serde_json::from_slice(&raw.body)
-            .map_err(|err| VeltrixError::config_invalid(format!("invalid caddy json: {err}")))?;
+            .map_err(|err| VeltrixError::parsing(format!("invalid caddy json: {err}")))?;
 
         Ok(CaddyResponse {
             backend: self.backend_used(),
@@ -115,7 +116,7 @@ impl CaddyAdminClient {
             CaddyAdminEndpoint::UnixSocket { socket_path } => {
                 let body_bytes = match body {
                     Some(body) => Some(serde_json::to_vec(&body).map_err(|err| {
-                        VeltrixError::config_invalid(format!("invalid caddy request json: {err}"))
+                        VeltrixError::parsing(format!("invalid caddy request json: {err}"))
                     })?),
                     None => None,
                 };
@@ -165,9 +166,10 @@ where
         "PATCH" => client.patch(&url),
         "DELETE" => client.delete(&url),
         _ => {
-            return Err(VeltrixError::config_invalid(format!(
-                "unsupported caddy HTTP method: {method}"
-            )));
+            return Err(VeltrixError::validation(
+                "method",
+                format!("unsupported caddy HTTP method: {method}"),
+            ));
         }
     };
 
@@ -180,18 +182,21 @@ where
     let response = request
         .send()
         .await
-        .map_err(|err| VeltrixError::config_invalid(format!("caddy HTTP request failed: {err}")))?;
+        .map_err(|err| VeltrixError::service("caddy", format!("HTTP request failed: {err}")))?;
 
     let status_code = response.status().as_u16();
     let body = response.bytes().await.map_err(|err| {
-        VeltrixError::config_invalid(format!("failed to read caddy HTTP response: {err}"))
+        VeltrixError::service("caddy", format!("failed to read HTTP response: {err}"))
     })?;
 
     if !(200..300).contains(&status_code) {
-        return Err(VeltrixError::config_invalid(format!(
-            "caddy HTTP request failed: status {status_code}; body: {}",
-            String::from_utf8_lossy(&body)
-        )));
+        return Err(VeltrixError::http(
+            status_code,
+            format!(
+                "caddy HTTP response body: {}",
+                String::from_utf8_lossy(&body)
+            ),
+        ));
     }
 
     Ok(HttpRawResponse {
@@ -206,7 +211,9 @@ async fn http_unix(
     path: &str,
     body: Option<&[u8]>,
 ) -> Result<HttpRawResponse> {
-    let mut stream = UnixStream::connect(socket_path).await?;
+    let mut stream = UnixStream::connect(socket_path)
+        .await
+        .map_err(|err| VeltrixError::socket(format!("caddy connect failed: {err}")))?;
 
     let body_len = body.map(|b| b.len()).unwrap_or(0);
 
@@ -225,18 +232,27 @@ async fn http_unix(
         request.extend_from_slice(body);
     }
 
-    stream.write_all(&request).await?;
-    stream.shutdown().await?;
+    stream
+        .write_all(&request)
+        .await
+        .map_err(|err| VeltrixError::socket(format!("caddy write failed: {err}")))?;
+    stream
+        .shutdown()
+        .await
+        .map_err(|err| VeltrixError::socket(format!("caddy shutdown failed: {err}")))?;
 
     let mut response = Vec::new();
-    stream.read_to_end(&mut response).await?;
+    stream
+        .read_to_end(&mut response)
+        .await
+        .map_err(|err| VeltrixError::socket(format!("caddy read failed: {err}")))?;
 
     parse_http_response(response, "caddy unix socket")
 }
 
 fn parse_http_response(response: Vec<u8>, context: &str) -> Result<HttpRawResponse> {
     let Some(header_end) = find_header_end(&response) else {
-        return Err(VeltrixError::config_invalid(format!(
+        return Err(VeltrixError::parsing(format!(
             "invalid HTTP response from {context}"
         )));
     };
@@ -253,10 +269,13 @@ fn parse_http_response(response: Vec<u8>, context: &str) -> Result<HttpRawRespon
     let status_code = parse_status_code(&status_line)?;
 
     if !(200..300).contains(&status_code) {
-        return Err(VeltrixError::config_invalid(format!(
-            "{context} request failed: {status_line}; body: {}",
-            String::from_utf8_lossy(&body)
-        )));
+        return Err(VeltrixError::http(
+            status_code,
+            format!(
+                "{context} request failed: {status_line}; body: {}",
+                String::from_utf8_lossy(&body)
+            ),
+        ));
     }
 
     Ok(HttpRawResponse { status_code, body })
@@ -266,11 +285,9 @@ fn parse_status_code(status_line: &str) -> Result<u16> {
     status_line
         .split_whitespace()
         .nth(1)
-        .ok_or_else(|| {
-            VeltrixError::config_invalid(format!("invalid HTTP status line: {status_line}"))
-        })?
+        .ok_or_else(|| VeltrixError::parsing(format!("invalid HTTP status line: {status_line}")))?
         .parse::<u16>()
-        .map_err(|err| VeltrixError::config_invalid(format!("invalid HTTP status code: {err}")))
+        .map_err(|err| VeltrixError::parsing(format!("invalid HTTP status code: {err}")))
 }
 
 fn find_header_end(bytes: &[u8]) -> Option<usize> {
