@@ -36,11 +36,17 @@ enum Command {
         cldr: Option<PathBuf>,
 
         /// Output constants.rs path.
-        #[arg(long, default_value = "workspace/veltrix/src/unicode/emojis/constants.rs")]
+        #[arg(
+            long,
+            default_value = "workspace/veltrix/src/unicode/emojis/constants.rs"
+        )]
         constants: PathBuf,
 
         /// Output details.rs path.
-        #[arg(long, default_value = "workspace/veltrix/src/unicode/emojis/details.rs")]
+        #[arg(
+            long,
+            default_value = "workspace/veltrix/src/unicode/emojis/details.rs"
+        )]
         details: PathBuf,
     },
 }

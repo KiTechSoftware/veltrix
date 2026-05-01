@@ -13,6 +13,13 @@ pub mod services;
 /// Unicode helpers, such as emoji constants and lookup functions.
 pub mod unicode;
 
+#[cfg(feature = "emojis")]
+/// Transitional top-level emoji helpers.
+///
+/// `veltrix::unicode::emojis` is the canonical v0.4+ path. This re-export
+/// keeps the v0.1-v0.3 `veltrix::emojis` path available during migration.
+pub use unicode::emojis;
+
 // /// Data constants and lookup helpers, such as bools and emojis.
 // /// Planned for v0.6.0, but not yet implemented.
 // pub mod data;
