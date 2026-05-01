@@ -4,7 +4,8 @@ use crate::os::process::cmd::{spec::CmdSpec, std_cmd};
 use super::{
     spec::{SystemdBackendUsed, SystemdCliSpec, SystemdEmptyResponse, SystemdResponse},
     types::{
-        SystemdDependency, SystemdJournal, SystemdResourceLimit, SystemdUnitFile, SystemdUnitStatus,
+        SystemdDependency, SystemdJournal, SystemdJournalEntry, SystemdResourceLimit,
+        SystemdUnitFile, SystemdUnitStatus,
     },
 };
 
@@ -109,8 +110,41 @@ impl SystemdCliClient {
         ))
     }
 
+    pub fn journal_entries(
+        &self,
+        unit: &str,
+        lines: Option<u32>,
+    ) -> Result<SystemdResponse<Vec<SystemdJournalEntry>>> {
+        let mut args = vec![
+            "-u".to_string(),
+            unit.to_string(),
+            "-o".to_string(),
+            "json".to_string(),
+            "--no-pager".to_string(),
+        ];
+
+        if let Some(lines) = lines {
+            args.push("-n".to_string());
+            args.push(lines.to_string());
+        }
+
+        let output = self.journalctl_output(args)?;
+        Ok(SystemdResponse::new(
+            parse_journal_entries(&output)?,
+            self.backend_used(),
+        ))
+    }
+
     pub fn tail_journal(&self, unit: &str, lines: u32) -> Result<SystemdResponse<SystemdJournal>> {
         self.journal(unit, Some(lines))
+    }
+
+    pub fn tail_journal_entries(
+        &self,
+        unit: &str,
+        lines: u32,
+    ) -> Result<SystemdResponse<Vec<SystemdJournalEntry>>> {
+        self.journal_entries(unit, Some(lines))
     }
 
     pub fn journal_since(
@@ -138,10 +172,48 @@ impl SystemdCliClient {
         ))
     }
 
+    pub fn journal_entries_since(
+        &self,
+        unit: &str,
+        since: &str,
+        until: Option<&str>,
+    ) -> Result<SystemdResponse<Vec<SystemdJournalEntry>>> {
+        let mut args = vec![
+            "-u".to_string(),
+            unit.to_string(),
+            "--since".to_string(),
+            since.to_string(),
+            "-o".to_string(),
+            "json".to_string(),
+            "--no-pager".to_string(),
+        ];
+        if let Some(until) = until {
+            args.push("--until".to_string());
+            args.push(until.to_string());
+        }
+
+        let output = self.journalctl_output(args)?;
+        Ok(SystemdResponse::new(
+            parse_journal_entries(&output)?,
+            self.backend_used(),
+        ))
+    }
+
     pub fn journal_boot(&self, unit: &str) -> Result<SystemdResponse<SystemdJournal>> {
         let output = self.journalctl_output(["-u", unit, "-b", "--no-pager"])?;
         Ok(SystemdResponse::new(
             SystemdJournal { output },
+            self.backend_used(),
+        ))
+    }
+
+    pub fn journal_entries_boot(
+        &self,
+        unit: &str,
+    ) -> Result<SystemdResponse<Vec<SystemdJournalEntry>>> {
+        let output = self.journalctl_output(["-u", unit, "-b", "-o", "json", "--no-pager"])?;
+        Ok(SystemdResponse::new(
+            parse_journal_entries(&output)?,
             self.backend_used(),
         ))
     }
@@ -154,6 +226,19 @@ impl SystemdCliClient {
         let output = self.journalctl_output(["-u", unit, "-p", priority, "--no-pager"])?;
         Ok(SystemdResponse::new(
             SystemdJournal { output },
+            self.backend_used(),
+        ))
+    }
+
+    pub fn journal_entries_priority(
+        &self,
+        unit: &str,
+        priority: &str,
+    ) -> Result<SystemdResponse<Vec<SystemdJournalEntry>>> {
+        let output =
+            self.journalctl_output(["-u", unit, "-p", priority, "-o", "json", "--no-pager"])?;
+        Ok(SystemdResponse::new(
+            parse_journal_entries(&output)?,
             self.backend_used(),
         ))
     }
@@ -352,6 +437,19 @@ fn parse_unit_files(output: &str) -> Vec<SystemdUnitFile> {
         .collect()
 }
 
+fn parse_journal_entries(output: &str) -> Result<Vec<SystemdJournalEntry>> {
+    output
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .map(|line| {
+            let fields = serde_json::from_str(line).map_err(|err| {
+                VeltrixError::parsing(format!("invalid systemd journal json: {err}"))
+            })?;
+            Ok(SystemdJournalEntry::from_fields(fields))
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -384,5 +482,18 @@ mod tests {
             SystemdResourceLimit::new("MemoryMax", "512M").assignment(),
             "MemoryMax=512M"
         );
+    }
+
+    #[test]
+    fn parses_structured_journal_entries() {
+        let entries = parse_journal_entries(
+            r#"{"MESSAGE":"started","_SYSTEMD_UNIT":"demo.service","PRIORITY":"6","__REALTIME_TIMESTAMP":"1710000000000000"}"#,
+        )
+        .unwrap();
+
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].message.as_deref(), Some("started"));
+        assert_eq!(entries[0].unit.as_deref(), Some("demo.service"));
+        assert_eq!(entries[0].priority.as_deref(), Some("6"));
     }
 }
