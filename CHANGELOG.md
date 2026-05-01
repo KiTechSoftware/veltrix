@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.6.0
+
+- Added the feature-gated `veltrix::data` module with boolean parsing/formatting helpers and compact duration parsing/formatting helpers.
+- Added `veltrix::os::clock` with wall-clock, monotonic, Unix timestamp, uptime, process CPU time, and thread CPU time helpers.
+- Expanded `services::systemd` with CLI-backed lifecycle, inspection, journal filtering, unit-file, timer, override, template, resource-limit, watchdog, and deployment workflows.
+- Added `services::technitium::TechnitiumClient` for async HTTP API workflows covering auth, zones, records, settings, resolving, logs, stats, blocklist entries, zone import, and bulk records.
+- Added Technitium response envelope parsing, credential-safe auth handling, and DNS record type formatting helpers.
+
 ## v0.5.0
 
 - Added first-class Podman label helpers with `PodmanLabel`, `PodmanLabels`, typed CLI label arguments, and Quadlet label rendering.
@@ -40,3 +48,27 @@ Services foundation release.
 - Pinned Technitium preview support to the `13.x` HTTP API family and added credential-safe auth modeling.
 - Kept `services::systemd` free of placeholder public APIs until real systemd-backed behavior lands.
 - Updated service contracts, README feature descriptions, and generated emoji docs policy.
+
+## v0.2.0
+
+Breaking OS layout and services preview release.
+
+- Moved canonical path helpers from `veltrix::paths` to `veltrix::os::paths`.
+- Moved canonical Unix helpers from `veltrix::unistd` to `veltrix::os::unistd`.
+- Added `veltrix::os::process` command helpers with sync execution and optional Tokio async execution.
+- Added the `services` parent module with early Podman, Caddy, systemd, and Technitium integration scaffolding.
+- Added Podman CLI/socket specs, response wrappers, and initial clients behind `podman` and `podman-socket`.
+- Added Caddy Admin API spec, response wrappers, and initial admin client behind `caddy`.
+- Added API contract docs for OS, services, Unicode, and data domains.
+- Added preview `veltrix::data::bools` formatting/predicate helpers, not yet exposed as the long-term data API.
+- Updated feature flags for `async`, `podman`, `podman-socket`, `caddy`, `systemd`, `technitium`, `unistd`, and `emojis`.
+
+## v0.1.0
+
+Initial release.
+
+- Added top-level `veltrix::paths` helpers for common system, user, XDG, config, state, cache, data, runtime, log, bin, desktop-entry, icon, and systemd-unit paths.
+- Added feature-gated top-level `veltrix::unistd` helpers for Unix identity, groups, process IDs, hostname, current directory, home directory, and privilege checks.
+- Added generated `veltrix::emojis` constants and metadata behind the `emojis` feature.
+- Added the `veltrix-codegen` emoji generation pipeline and source data integration.
+- Added `VeltrixError`, `Result`, examples for paths/unistd/emojis, and initial README documentation.

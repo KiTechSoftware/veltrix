@@ -29,12 +29,15 @@ caddy = ["async", "serde", "serde_json", "reqwest/json", "tokio/net", "tokio/io-
 systemd = []
 technitium = ["async", "serde", "serde_json", "reqwest/json"]
 
+data = []
+data-bools = ["data"]
+data-time = ["data"]
 unistd = ["libc"]
 unicode = []
 unicode-emojis = []
 emojis = ["unicode-emojis"]
 
-full = ["podman-full", "docker-full", "caddy", "systemd", "technitium", "unistd", "unicode", "unicode-emojis"]
+full = ["podman-full", "docker-full", "caddy", "systemd", "technitium", "data-bools", "data-time", "unistd", "unicode", "unicode-emojis"]
 
 [dependencies]
 thiserror = "2"

@@ -10,6 +10,7 @@ It is designed for projects that want clean utilities without pulling in large f
 
 * 🐧 Unix identity, process, and environment helpers
 * 📁 Path utilities for common user locations
+* ⏱️ OS/runtime clock helpers
 * 😀 Generated Unicode emoji dataset
 * 🔎 Emoji names, groups, versions, and keywords
 * ⚙️ Feature-gated modules
@@ -19,17 +20,21 @@ It is designed for projects that want clean utilities without pulling in large f
 
 ```toml
 [dependencies]
-veltrix = "0.5.0"
+veltrix = "0.6.0"
 ```
 
 Optional features:
 
 ```toml
-veltrix = { version = "0.5.0", features = [
+veltrix = { version = "0.6.0", features = [
     "async",
     "podman",
     "docker",
     "caddy",
+    "systemd",
+    "technitium",
+    "data-bools",
+    "data-time",
     "unicode",
     "unicode-emojis",
 ] }
@@ -51,6 +56,9 @@ veltrix = { version = "0.5.0", features = [
 | `caddy`            | Caddy admin API integration                          |
 | `systemd`          | systemd service management helpers                   |
 | `technitium`       | Technitium DNS API integration                       |
+| `data`             | Data parent module                                   |
+| `data-bools`       | Boolean parsing and formatting helpers               |
+| `data-time`        | Time value parsing and formatting helpers            |
 | `full`             | All features except deprecated `emojis`              |
 
 ## Modules
@@ -155,6 +163,35 @@ let bin = veltrix::os::paths::user_bin_path("mytool")?;
 println!("{}", bin.display());
 ```
 
+## `veltrix::os::clock`
+
+Runtime and platform clock helpers.
+
+```rust
+use veltrix::os::clock;
+
+let wall = clock::now();
+let started = clock::monotonic();
+let timestamp = clock::unix_timestamp()?;
+let uptime = clock::uptime()?;
+
+println!("{wall:?} {timestamp:?} {uptime:?} {:?}", clock::elapsed_since(started));
+```
+
+## `veltrix::data`
+
+Value-level parsing and formatting helpers.
+
+```rust
+use veltrix::data::{bools, time};
+
+let enabled = bools::parse_truthy_falsy("on")?;
+let duration = time::parse_duration("1h30m")?;
+
+assert_eq!(enabled, true);
+assert_eq!(time::format_duration(duration), "1h30m");
+```
+
 ## `veltrix::services`
 
 Typed integrations for local and self-hosted service management (Podman, Docker, Caddy, systemd, Technitium DNS). Each service is feature-gated; incomplete integrations expose foundation types before full workflow clients.
@@ -201,6 +238,30 @@ caddy.validate(["--config", "Caddyfile"])?;
 let admin = CaddyAdminClient::localhost_default();
 let config = CaddyConfig::local_https_reverse_proxy("app.local", ["127.0.0.1:3000"])?;
 admin.load_config(&config).await?;
+```
+
+```rust
+// Example: systemd (requires "systemd" feature)
+use veltrix::services::systemd::{SystemdCliClient, SystemdCliSpec};
+
+let systemd = SystemdCliClient::new(SystemdCliSpec::new().user());
+let status = systemd.status("app.service")?;
+let logs = systemd.tail_journal("app.service", 100)?;
+```
+
+```rust
+// Example: Technitium DNS (requires "technitium" feature)
+use veltrix::services::technitium::{
+    TechnitiumAuth, TechnitiumClient, TechnitiumHttpSpec, TechnitiumRecordType,
+};
+
+let dns = TechnitiumClient::new(
+    TechnitiumHttpSpec::new("http://localhost:5380")
+        .auth(TechnitiumAuth::session_token("token")),
+)?;
+
+let zones = dns.zones().await?;
+let answer = dns.resolve("app.local", TechnitiumRecordType::A).await?;
 ```
 
 Supported services:
