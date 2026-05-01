@@ -10,10 +10,6 @@ pub mod os;
 /// Introduced in v0.2.0, but still in early stages of development.
 pub mod services;
 
-#[cfg(feature = "unicode-emojis")]
-/// Emoji constants and lookup helpers.
-pub mod emojis;
-
 /// Unicode helpers, such as emoji constants and lookup functions.
 pub mod unicode;
 
