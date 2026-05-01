@@ -19,18 +19,18 @@ It is designed for projects that want clean utilities without pulling in large f
 
 ```toml
 [dependencies]
-veltrix = "0.3"
+veltrix = "0.4"
 ```
 
 Optional features:
 
 ```toml
-veltrix = { version = "0.3", features = [
+veltrix = { version = "0.4", features = [
     "async",
     "podman",
     "docker",
     "caddy",
-    "emojis",
+    "unicode-emojis",
 ] }
 ```
 
@@ -40,7 +40,9 @@ veltrix = { version = "0.3", features = [
 | ------------------ | ---------------------------------------------------- |
 | `async`            | Tokio-based async process execution                  |
 | `unistd`           | Unix identity, group, hostname, and privilege helpers|
-| `emojis`           | Emoji constants and lookup helpers                   |
+| `emojis`           | Deprecated, use `unicode-emojis`                     |
+| `unicode`          | Unicode parent module                                |
+| `unicode-emojis`   | Canonical Unicode emoji path plus emoji data         |
 | `podman`           | Podman CLI/socket integration                        |
 | `podman-socket`    | Podman async Unix-socket backend (implies `podman`)  |
 | `docker`           | Docker CLI/socket/Compose foundation types           |
@@ -177,16 +179,18 @@ Supported services:
 * systemd (service management)
 * Technitium DNS (DNS server)
 
-## `veltrix::emojis`
+## `veltrix::unicode::emojis`
 
 Generated Unicode emoji metadata with search-friendly fields.
 
 ```rust
-use veltrix::emojis::details::ALL;
+use veltrix::unicode::emojis::details::{ALL, find_by_search_term};
 
 for emoji in ALL.iter().take(5) {
-    println!("{} {}", emoji.emoji, emoji.name);
+    println!("{} {} {}", emoji.emoji, emoji.name, emoji.unicode_version);
 }
+
+let smile = find_by_search_term("smile");
 ```
 
 Each emoji entry includes:
@@ -197,7 +201,12 @@ Each emoji entry includes:
 * subgroup
 * codepoints
 * keywords
+* normalized search terms
 * emoji version
+* Unicode Emoji data version
+* skin-tone and variation-selector metadata
+
+The legacy `veltrix::emojis` path remains available during the transition.
 
 ## Design Goals
 
@@ -232,16 +241,6 @@ Windows compatibility is not a present goal.
 ## Stability
 
 `veltrix` is pre-release. APIs may evolve before `1.0`.
-
-## Roadmap
-
-### Backlog
-
-* [ ] richer emoji keyword sources
-* [ ] additional path helpers
-* [ ] more Unix utilities
-* [ ] improved search APIs
-* [ ] expanded documentation
 
 ## License
 
