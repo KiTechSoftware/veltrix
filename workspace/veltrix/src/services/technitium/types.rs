@@ -5,6 +5,7 @@ use serde_json::Value;
 
 /// Common Technitium HTTP API envelope.
 #[derive(Debug, Clone, Deserialize)]
+#[serde(bound(deserialize = "T: Deserialize<'de>"))]
 pub struct TechnitiumApiEnvelope<T> {
     #[serde(default)]
     pub status: Option<String>,
@@ -12,7 +13,7 @@ pub struct TechnitiumApiEnvelope<T> {
     #[serde(default)]
     pub response: Option<T>,
 
-    #[serde(default)]
+    #[serde(rename = "errorMessage", alias = "error_message", default)]
     pub error_message: Option<String>,
 
     #[serde(flatten)]
@@ -81,6 +82,29 @@ pub enum TechnitiumRecordType {
     SRV,
     CAA,
     PTR,
+}
+
+impl TechnitiumRecordType {
+    /// Return the DNS record type name used by Technitium API parameters.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::A => "A",
+            Self::AAAA => "AAAA",
+            Self::CNAME => "CNAME",
+            Self::MX => "MX",
+            Self::TXT => "TXT",
+            Self::NS => "NS",
+            Self::SRV => "SRV",
+            Self::CAA => "CAA",
+            Self::PTR => "PTR",
+        }
+    }
+}
+
+impl std::fmt::Display for TechnitiumRecordType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
 }
 
 /// Basic DNS record payload shared by read-only preview workflows.
