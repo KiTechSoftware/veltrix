@@ -30,9 +30,11 @@ systemd = []
 technitium = ["async", "serde", "serde_json", "reqwest/json"]
 
 unistd = ["libc"]
-emojis = []
+unicode = []
+unicode-emojis = []
+emojis = ["unicode-emojis"]
 
-full = ["podman-full", "docker-full", "caddy", "systemd", "technitium", "unistd", "emojis"]
+full = ["podman-full", "docker-full", "caddy", "systemd", "technitium", "unistd", "unicode", "unicode-emojis"]
 
 [dependencies]
 thiserror = "2"

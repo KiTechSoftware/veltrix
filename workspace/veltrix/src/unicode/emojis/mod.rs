@@ -8,4 +8,7 @@ pub mod constants;
 pub mod details;
 
 pub use constants::*;
-pub use details::{ALL, Emoji, by_group, by_subgroup, find_by_emoji, find_by_name};
+pub use details::{
+    ALL, CLDR_VERSION, Emoji, UNICODE_EMOJI_VERSION, by_group, by_subgroup, find_by_emoji,
+    find_by_name, find_by_search_term,
+};

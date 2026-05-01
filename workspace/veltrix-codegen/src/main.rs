@@ -5,7 +5,7 @@ mod emoji;
 
 #[derive(Debug, Parser)]
 #[command(name = "veltrix-codegen")]
-#[command(about = "Private code generator for Veltrix")]
+#[command(about = "General-purpose code generator for Veltrix generated data")]
 struct Cli {
     #[command(subcommand)]
     command: Command,
@@ -36,11 +36,11 @@ enum Command {
         cldr: Option<PathBuf>,
 
         /// Output constants.rs path.
-        #[arg(long, default_value = "veltrix/src/emojis/constants.rs")]
+        #[arg(long, default_value = "workspace/veltrix/src/unicode/emojis/constants.rs")]
         constants: PathBuf,
 
         /// Output details.rs path.
-        #[arg(long, default_value = "veltrix/src/emojis/details.rs")]
+        #[arg(long, default_value = "workspace/veltrix/src/unicode/emojis/details.rs")]
         details: PathBuf,
     },
 }
