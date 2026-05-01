@@ -19,35 +19,43 @@ It is designed for projects that want clean utilities without pulling in large f
 
 ```toml
 [dependencies]
-veltrix = "0.1"
+veltrix = "0.2"
 ```
 
 Optional features:
 
 ```toml
-veltrix = { version = "0.1", features = [
-    "paths",
-    "full",
+veltrix = { version = "0.2", features = [
+    "async",
+    "podman",
+    "caddy",
+    "emojis",
 ] }
 ```
 
 ## Feature Flags
 
-| Feature | Enables               |
-| ------- | --------------------- |
-| `paths` | Path-related helpers  |
-| `full`  | All optional features |
+| Feature            | Enables                                              |
+| ------------------ | ---------------------------------------------------- |
+| `async`            | Tokio-based async process execution                  |
+| `unistd`           | Unix identity, group, hostname, and privilege helpers|
+| `emojis`           | Emoji constants and lookup helpers                   |
+| `podman`           | Podman CLI/socket integration                        |
+| `podman-socket`    | Podman async Unix-socket backend (implies `podman`)  |
+| `caddy`            | Caddy admin API integration                          |
+| `systemd`          | systemd service management helpers                   |
+| `technitium`       | Technitium DNS API integration                       |
 
 ## Modules
 
-## `veltrix::unistd`
+## `veltrix::os::unistd`
 
 Unix-only helpers for users, groups, processes, and environment.
 
-## Core Identity
+### Core Identity
 
 ```rust
-use veltrix::unistd::*;
+use veltrix::os::unistd::*;
 
 let uid = getuid();
 let euid = geteuid();
@@ -69,10 +77,10 @@ Available types and functions:
 * `getpid()`
 * `getppid()`
 
-## User / Group Lookup
+### User / Group Lookup
 
 ```rust
-use veltrix::unistd::*;
+use veltrix::os::unistd::*;
 
 let root = uid_by_username("root");
 let user = username_by_uid(getuid());
@@ -88,10 +96,10 @@ Available helpers:
 * `primary_gid_by_uid()`
 * `groups_for_uid()`
 
-## Host / Process Environment
+### Host / Process Environment
 
 ```rust
-use veltrix::unistd::*;
+use veltrix::os::unistd::*;
 
 let host = gethostname()?;
 let cwd = getcwd()?;
@@ -107,10 +115,10 @@ Available helpers:
 * `chdir()`
 * `home_dir()`
 
-## Privilege Helpers
+### Privilege Helpers
 
 ```rust
-use veltrix::unistd::*;
+use veltrix::os::unistd::*;
 
 if is_effective_root() {
     println!("running as root");
@@ -131,18 +139,33 @@ Available helpers:
 
 > Admin group helpers are convenience heuristics and not authoritative privilege checks.
 
----
-
-## `veltrix::paths`
+## `veltrix::os::paths`
 
 Helpers for common user and application paths.
 
 ```rust
-let bin = veltrix::paths::user_bin_path("mytool")?;
+let bin = veltrix::os::paths::user_bin_path("mytool")?;
 println!("{}", bin.display());
 ```
 
----
+## `veltrix::services`
+
+Typed integrations for local and self-hosted service management (Podman, Caddy, systemd, Technitium DNS). Each service is feature-gated and provides sync and async APIs.
+
+```rust
+// Example: Podman (requires "podman" feature)
+use veltrix::services::podman::PodmanCli;
+
+let podman = PodmanCli::new();
+let containers = podman.list_containers().await?;
+```
+
+Supported services:
+
+* Podman (container runtime)
+* Caddy (web server / reverse proxy)
+* systemd (service management)
+* Technitium DNS (DNS server)
 
 ## `veltrix::emojis`
 
