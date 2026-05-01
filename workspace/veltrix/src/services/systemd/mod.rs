@@ -1,5 +1,13 @@
 //! systemd service integration.
 //!
-//! v0.3.0 intentionally exposes no placeholder systemd API. The services
-//! contract requires real systemd-backed behavior before public types are
-//! shipped under this module.
+//! The v0.6.0 API uses `systemctl` and `journalctl` as a portable CLI backend
+//! for lifecycle, inspection, journal, unit-file, timer, override, template,
+//! resource-limit, and watchdog/deployment workflows.
+
+pub mod cli;
+pub mod spec;
+pub mod types;
+
+pub use cli::SystemdCliClient;
+pub use spec::*;
+pub use types::*;
