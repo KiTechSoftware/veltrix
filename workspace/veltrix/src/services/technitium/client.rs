@@ -135,6 +135,65 @@ impl TechnitiumClient {
         .await
     }
 
+    /// Replace a DNS record by deleting the existing name/type and adding the new value.
+    pub async fn upsert_record(
+        &self,
+        zone: &str,
+        record: &TechnitiumDnsRecord,
+    ) -> Result<TechnitiumEmptyResponse> {
+        self.delete_record(zone, record.record_type, &record.name)
+            .await?;
+        self.add_record(zone, record).await
+    }
+
+    /// Set a TXT record in a zone.
+    pub async fn set_txt_record(
+        &self,
+        zone: &str,
+        name: &str,
+        value: &str,
+        ttl: Option<u32>,
+    ) -> Result<TechnitiumEmptyResponse> {
+        let mut record = TechnitiumDnsRecord::txt(name, value);
+        if let Some(ttl) = ttl {
+            record = record.ttl(ttl);
+        }
+
+        self.upsert_record(zone, &record).await
+    }
+
+    /// Remove a TXT record from a zone.
+    pub async fn remove_txt_record(
+        &self,
+        zone: &str,
+        name: &str,
+    ) -> Result<TechnitiumEmptyResponse> {
+        self.delete_record(zone, TechnitiumRecordType::TXT, name)
+            .await
+    }
+
+    /// Set the `_acme-challenge` TXT record Caddy needs for DNS-01 certificate issuance.
+    pub async fn set_caddy_acme_challenge(
+        &self,
+        zone: &str,
+        domain: &str,
+        token: &str,
+        ttl: Option<u32>,
+    ) -> Result<TechnitiumEmptyResponse> {
+        let name = acme_challenge_name(domain);
+        self.set_txt_record(zone, &name, token, ttl).await
+    }
+
+    /// Remove the `_acme-challenge` TXT record after Caddy certificate issuance.
+    pub async fn remove_caddy_acme_challenge(
+        &self,
+        zone: &str,
+        domain: &str,
+    ) -> Result<TechnitiumEmptyResponse> {
+        let name = acme_challenge_name(domain);
+        self.remove_txt_record(zone, &name).await
+    }
+
     /// Delete a DNS record by type and name.
     pub async fn delete_record(
         &self,
@@ -348,6 +407,15 @@ fn technitium_url(base_url: &str, path: &str) -> Result<reqwest::Url> {
     })
 }
 
+fn acme_challenge_name(domain: &str) -> String {
+    let domain = domain.trim().trim_end_matches('.');
+    if domain.starts_with("_acme-challenge.") {
+        domain.to_string()
+    } else {
+        format!("_acme-challenge.{domain}")
+    }
+}
+
 fn parse_response_body<T>(body: &[u8]) -> Result<T>
 where
     T: serde::de::DeserializeOwned,
@@ -419,5 +487,26 @@ mod tests {
         let body = br#"{"status":"error","errorMessage":"bad token"}"#;
         let err = parse_empty_body(body).unwrap_err();
         assert_eq!(err.to_string(), "technitium service failed: bad token");
+    }
+
+    #[test]
+    fn builds_caddy_acme_challenge_names() {
+        assert_eq!(
+            acme_challenge_name("app.example.test."),
+            "_acme-challenge.app.example.test"
+        );
+        assert_eq!(
+            acme_challenge_name("_acme-challenge.app.example.test"),
+            "_acme-challenge.app.example.test"
+        );
+    }
+
+    #[test]
+    fn builds_txt_records_with_ttl() {
+        let record = TechnitiumDnsRecord::txt("_acme-challenge.app.example.test", "token").ttl(60);
+
+        assert_eq!(record.record_type, TechnitiumRecordType::TXT);
+        assert_eq!(record.ttl, Some(60));
+        assert_eq!(record.value.as_deref(), Some("token"));
     }
 }

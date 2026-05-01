@@ -124,3 +124,31 @@ pub struct TechnitiumDnsRecord {
     #[serde(flatten)]
     pub extra: BTreeMap<String, Value>,
 }
+
+impl TechnitiumDnsRecord {
+    /// Create a DNS record with a primary value.
+    pub fn new(
+        name: impl Into<String>,
+        record_type: TechnitiumRecordType,
+        value: impl Into<String>,
+    ) -> Self {
+        Self {
+            name: name.into(),
+            record_type,
+            ttl: None,
+            value: Some(value.into()),
+            extra: BTreeMap::new(),
+        }
+    }
+
+    /// Create a TXT record.
+    pub fn txt(name: impl Into<String>, value: impl Into<String>) -> Self {
+        Self::new(name, TechnitiumRecordType::TXT, value)
+    }
+
+    /// Set record TTL in seconds.
+    pub fn ttl(mut self, ttl: u32) -> Self {
+        self.ttl = Some(ttl);
+        self
+    }
+}
