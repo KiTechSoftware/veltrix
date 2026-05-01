@@ -125,7 +125,19 @@ pub struct PodmanResponse<T> {
     pub data: T,
 }
 
+impl<T> PodmanResponse<T> {
+    pub fn new(data: T, backend: PodmanBackendUsed) -> Self {
+        Self { data, backend }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct PodmanEmptyResponse {
     pub backend: PodmanBackendUsed,
+}
+
+impl PodmanEmptyResponse {
+    pub fn new(backend: PodmanBackendUsed) -> Self {
+        Self { backend }
+    }
 }
