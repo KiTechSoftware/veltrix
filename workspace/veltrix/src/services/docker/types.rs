@@ -116,3 +116,35 @@ pub struct DockerImageSummary {
     #[serde(flatten)]
     pub extra: BTreeMap<String, Value>,
 }
+
+/// Text output returned by Docker log operations.
+#[derive(Debug, Clone)]
+pub struct DockerLogs {
+    pub output: String,
+}
+
+/// Docker Compose service/process summary placeholder for v0.5.0.
+#[derive(Debug, Clone, Deserialize)]
+pub struct DockerComposeServiceSummary {
+    #[serde(rename = "Name", alias = "name", default)]
+    pub name: Option<String>,
+
+    #[serde(rename = "Service", alias = "service", default)]
+    pub service: Option<String>,
+
+    #[serde(rename = "State", alias = "state", default)]
+    pub state: Option<String>,
+
+    #[serde(rename = "Publishers", alias = "publishers", default)]
+    pub publishers: Option<Vec<Value>>,
+
+    #[serde(flatten)]
+    pub extra: BTreeMap<String, Value>,
+}
+
+/// Opaque Docker socket response body for APIs not typed until v0.5.0.
+#[derive(Debug, Clone, Deserialize)]
+pub struct DockerSocketPayload {
+    #[serde(flatten)]
+    pub data: BTreeMap<String, Value>,
+}
