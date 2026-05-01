@@ -1,3 +1,8 @@
+//! Caddy Admin API integration.
+//!
+//! This module exposes an async client for selected Caddy 2 Admin API
+//! workflows over HTTP or Unix sockets.
+
 pub mod admin;
 pub mod spec;
 pub mod types;
