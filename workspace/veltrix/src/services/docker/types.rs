@@ -117,6 +117,86 @@ pub struct DockerImageSummary {
     pub extra: BTreeMap<String, Value>,
 }
 
+/// Docker volume summary.
+#[derive(Debug, Clone, Deserialize)]
+pub struct DockerVolumeSummary {
+    #[serde(rename = "Name", default)]
+    pub name: Option<String>,
+
+    #[serde(rename = "Driver", default)]
+    pub driver: Option<String>,
+
+    #[serde(rename = "Mountpoint", default)]
+    pub mountpoint: Option<String>,
+
+    #[serde(rename = "Labels", default)]
+    pub labels: Option<BTreeMap<String, String>>,
+
+    #[serde(flatten)]
+    pub extra: BTreeMap<String, Value>,
+}
+
+/// Docker network summary.
+#[derive(Debug, Clone, Deserialize)]
+pub struct DockerNetworkSummary {
+    #[serde(rename = "Id", alias = "ID", default)]
+    pub id: Option<String>,
+
+    #[serde(rename = "Name", default)]
+    pub name: Option<String>,
+
+    #[serde(rename = "Driver", default)]
+    pub driver: Option<String>,
+
+    #[serde(rename = "Scope", default)]
+    pub scope: Option<String>,
+
+    #[serde(rename = "Labels", default)]
+    pub labels: Option<BTreeMap<String, String>>,
+
+    #[serde(flatten)]
+    pub extra: BTreeMap<String, Value>,
+}
+
+/// Docker system disk-usage response.
+#[derive(Debug, Clone, Deserialize)]
+pub struct DockerSystemDf {
+    #[serde(flatten)]
+    pub data: BTreeMap<String, Value>,
+}
+
+/// Docker container-create response.
+#[derive(Debug, Clone, Deserialize)]
+pub struct DockerCreateContainerResponse {
+    #[serde(rename = "Id", default)]
+    pub id: Option<String>,
+
+    #[serde(rename = "Warnings", default)]
+    pub warnings: Option<Vec<String>>,
+
+    #[serde(flatten)]
+    pub extra: BTreeMap<String, Value>,
+}
+
+/// Docker image-pull progress line.
+#[derive(Debug, Clone, Deserialize)]
+pub struct DockerPullImageReport {
+    #[serde(default)]
+    pub status: Option<String>,
+
+    #[serde(default)]
+    pub id: Option<String>,
+
+    #[serde(default)]
+    pub progress: Option<String>,
+
+    #[serde(default)]
+    pub error: Option<String>,
+
+    #[serde(flatten)]
+    pub extra: BTreeMap<String, Value>,
+}
+
 /// Text output returned by Docker log operations.
 #[derive(Debug, Clone)]
 pub struct DockerLogs {
