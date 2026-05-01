@@ -1,6 +1,6 @@
 [package]
 name = "veltrix"
-description = "General utilities"
+description = "Unix helpers, service integrations, and Unicode metadata"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

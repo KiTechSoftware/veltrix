@@ -3,15 +3,15 @@ members = ["veltrix", "veltrix-codegen"]
 resolver = "2"
 
 [workspace.package]
-version = "0.4.1"
+version = "0.5.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/kitechsoftware/veltrix"
 homepage = "https://github.com/kitechsoftware/veltrix"
 documentation = "https://docs.rs/veltrix"
 readme = "../README.md"
-keywords = ["cli", "terminal", "prompt", "output", "markdown"]
-categories = ["command-line-interface"]
+keywords = ["unix", "services", "podman", "caddy", "unicode"]
+categories = ["os::unix-apis", "api-bindings", "config", "development-tools"]
 
 [workspace.dependencies]
 veltrix = { path = "./veltrix", features = ["full"] }

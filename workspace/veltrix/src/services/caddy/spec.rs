@@ -3,6 +3,34 @@ use std::path::PathBuf;
 /// Supported Caddy major version for this integration.
 pub const SUPPORTED_CADDY_MAJOR: u64 = 2;
 
+/// Caddy CLI backend specification.
+#[derive(Debug, Clone)]
+pub struct CaddyCliSpec {
+    /// Caddy executable name or path.
+    pub binary: String,
+}
+
+impl Default for CaddyCliSpec {
+    fn default() -> Self {
+        Self {
+            binary: "caddy".to_string(),
+        }
+    }
+}
+
+impl CaddyCliSpec {
+    /// Create a default Caddy CLI spec.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Set the Caddy executable name or path.
+    pub fn binary(mut self, binary: impl Into<String>) -> Self {
+        self.binary = binary.into();
+        self
+    }
+}
+
 /// Caddy Admin API endpoint transport.
 #[derive(Debug, Clone)]
 pub enum CaddyAdminEndpoint {
@@ -60,6 +88,8 @@ impl CaddyAdminSpec {
 /// Metadata describing the Caddy backend used for a response.
 #[derive(Debug, Clone)]
 pub enum CaddyBackendUsed {
+    /// Caddy CLI backend.
+    Cli { binary: String },
     /// HTTP Admin API backend.
     Http { base_url: String },
     /// Unix-domain socket Admin API backend.

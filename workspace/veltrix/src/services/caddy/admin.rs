@@ -1,6 +1,7 @@
 use std::path::Path;
 
 use serde::Serialize;
+use serde_json::Value;
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::UnixStream,
@@ -12,7 +13,7 @@ use super::{
     spec::{
         CaddyAdminEndpoint, CaddyAdminSpec, CaddyBackendUsed, CaddyEmptyResponse, CaddyResponse,
     },
-    types::{CaddyConfig, CaddyIdList, CaddyPkiCaInfo},
+    types::{CaddyConfig, CaddyIdList, CaddyModuleList, CaddyPkiCaInfo},
 };
 
 #[derive(Debug, Clone)]
@@ -38,8 +39,31 @@ impl CaddyAdminClient {
             .await
     }
 
+    pub async fn get_config_path<T>(&self, config_path: &str) -> Result<CaddyResponse<T>>
+    where
+        T: serde::de::DeserializeOwned,
+    {
+        let path = caddy_config_path(config_path);
+        self.request_json("GET", &path, Option::<&()>::None).await
+    }
+
     pub async fn load_config(&self, config: &CaddyConfig) -> Result<CaddyEmptyResponse> {
         self.request_empty("POST", "/load", Some(config)).await
+    }
+
+    pub async fn patch_config_path(
+        &self,
+        config_path: &str,
+        value: &Value,
+    ) -> Result<CaddyEmptyResponse> {
+        let path = caddy_config_path(config_path);
+        self.request_empty("PATCH", &path, Some(value)).await
+    }
+
+    pub async fn delete_config_path(&self, config_path: &str) -> Result<CaddyEmptyResponse> {
+        let path = caddy_config_path(config_path);
+        self.request_empty("DELETE", &path, Option::<&()>::None)
+            .await
     }
 
     pub async fn stop(&self) -> Result<CaddyEmptyResponse> {
@@ -49,6 +73,31 @@ impl CaddyAdminClient {
 
     pub async fn id_list(&self) -> Result<CaddyResponse<CaddyIdList>> {
         self.request_json("GET", "/id/", Option::<&()>::None).await
+    }
+
+    pub async fn modules(&self) -> Result<CaddyResponse<CaddyModuleList>> {
+        self.request_json("GET", "/modules", Option::<&()>::None)
+            .await
+    }
+
+    pub async fn module_config(&self, module_path: &str) -> Result<CaddyResponse<Value>> {
+        let path = caddy_module_path(module_path);
+        self.request_json("GET", &path, Option::<&()>::None).await
+    }
+
+    pub async fn patch_module_config(
+        &self,
+        module_path: &str,
+        value: &Value,
+    ) -> Result<CaddyEmptyResponse> {
+        let path = caddy_module_path(module_path);
+        self.request_empty("PATCH", &path, Some(value)).await
+    }
+
+    pub async fn delete_module_config(&self, module_path: &str) -> Result<CaddyEmptyResponse> {
+        let path = caddy_module_path(module_path);
+        self.request_empty("DELETE", &path, Option::<&()>::None)
+            .await
     }
 
     pub async fn pki_ca(&self, ca_id: &str) -> Result<CaddyResponse<CaddyPkiCaInfo>> {
@@ -292,4 +341,29 @@ fn parse_status_code(status_line: &str) -> Result<u16> {
 
 fn find_header_end(bytes: &[u8]) -> Option<usize> {
     bytes.windows(4).position(|window| window == b"\r\n\r\n")
+}
+
+fn caddy_config_path(path: &str) -> String {
+    let path = path.trim_start_matches('/');
+    format!("/config/{path}")
+}
+
+fn caddy_module_path(path: &str) -> String {
+    caddy_config_path(&format!("apps/{}", path.trim_start_matches('/')))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn config_paths_are_normalized() {
+        assert_eq!(caddy_config_path("apps/http"), "/config/apps/http");
+        assert_eq!(caddy_config_path("/apps/http"), "/config/apps/http");
+        assert_eq!(caddy_module_path("http"), "/config/apps/http");
+        assert_eq!(
+            caddy_module_path("/tls/automation"),
+            "/config/apps/tls/automation"
+        );
+    }
 }
