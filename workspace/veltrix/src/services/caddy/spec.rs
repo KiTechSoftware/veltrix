@@ -4,12 +4,8 @@ pub const SUPPORTED_CADDY_MAJOR: u64 = 2;
 
 #[derive(Debug, Clone)]
 pub enum CaddyAdminEndpoint {
-    Http {
-        base_url: String,
-    },
-    UnixSocket {
-        socket_path: PathBuf,
-    },
+    Http { base_url: String },
+    UnixSocket { socket_path: PathBuf },
 }
 
 impl Default for CaddyAdminEndpoint {
@@ -20,8 +16,7 @@ impl Default for CaddyAdminEndpoint {
     }
 }
 
-#[derive(Debug, Clone)]
-#[derive(Default)]
+#[derive(Debug, Clone, Default)]
 pub struct CaddyAdminSpec {
     pub endpoint: CaddyAdminEndpoint,
 }
@@ -54,12 +49,8 @@ impl CaddyAdminSpec {
 
 #[derive(Debug, Clone)]
 pub enum CaddyBackendUsed {
-    Http {
-        base_url: String,
-    },
-    UnixSocket {
-        socket_path: PathBuf,
-    },
+    Http { base_url: String },
+    UnixSocket { socket_path: PathBuf },
 }
 
 #[derive(Debug, Clone)]

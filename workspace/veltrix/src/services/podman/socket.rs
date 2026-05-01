@@ -10,7 +10,7 @@ use crate::error::{Result, VeltrixError};
 use super::spec::SUPPORTED_LIBPOD_API_VERSION;
 
 use super::{
-    spec::{PodmanBackendUsed, PodmanResponse, PodmanEmptyResponse, PodmanSocketSpec},
+    spec::{PodmanBackendUsed, PodmanEmptyResponse, PodmanResponse, PodmanSocketSpec},
     types::{PodmanContainerSummary, PodmanInfo, PodmanVersion},
 };
 

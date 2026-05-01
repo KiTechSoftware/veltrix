@@ -3,9 +3,7 @@ use crate::{
     os::process::cmd::async_cmd,
 };
 
-use super::{
-    base_cmd, PodmanCliClient,
-};
+use super::{PodmanCliClient, base_cmd};
 
 use crate::services::podman::{
     spec::{PodmanBackendUsed, PodmanCliSpec, PodmanResponse},

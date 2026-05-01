@@ -9,7 +9,9 @@ use tokio::{
 use crate::error::{Result, VeltrixError};
 
 use super::{
-    spec::{CaddyAdminEndpoint, CaddyAdminSpec, CaddyBackendUsed, CaddyEmptyResponse, CaddyResponse},
+    spec::{
+        CaddyAdminEndpoint, CaddyAdminSpec, CaddyBackendUsed, CaddyEmptyResponse, CaddyResponse,
+    },
     types::{CaddyConfig, CaddyIdList, CaddyPkiCaInfo},
 };
 
@@ -32,7 +34,8 @@ impl CaddyAdminClient {
     }
 
     pub async fn config(&self) -> Result<CaddyResponse<CaddyConfig>> {
-        self.request_json("GET", "/config/", Option::<&()>::None).await
+        self.request_json("GET", "/config/", Option::<&()>::None)
+            .await
     }
 
     pub async fn load_config(&self, config: &CaddyConfig) -> Result<CaddyEmptyResponse> {
@@ -40,7 +43,8 @@ impl CaddyAdminClient {
     }
 
     pub async fn stop(&self) -> Result<CaddyEmptyResponse> {
-        self.request_empty("POST", "/stop", Option::<&()>::None).await
+        self.request_empty("POST", "/stop", Option::<&()>::None)
+            .await
     }
 
     pub async fn id_list(&self) -> Result<CaddyResponse<CaddyIdList>> {
@@ -95,7 +99,12 @@ impl CaddyAdminClient {
         })
     }
 
-    async fn request_raw<B>(&self, method: &str, path: &str, body: Option<B>) -> Result<HttpRawResponse>
+    async fn request_raw<B>(
+        &self,
+        method: &str,
+        path: &str,
+        body: Option<B>,
+    ) -> Result<HttpRawResponse>
     where
         B: Serialize,
     {
@@ -105,11 +114,9 @@ impl CaddyAdminClient {
             }
             CaddyAdminEndpoint::UnixSocket { socket_path } => {
                 let body_bytes = match body {
-                    Some(body) => Some(
-                        serde_json::to_vec(&body).map_err(|err| {
-                            VeltrixError::config_invalid(format!("invalid caddy request json: {err}"))
-                        })?,
-                    ),
+                    Some(body) => Some(serde_json::to_vec(&body).map_err(|err| {
+                        VeltrixError::config_invalid(format!("invalid caddy request json: {err}"))
+                    })?),
                     None => None,
                 };
 
@@ -160,7 +167,7 @@ where
         _ => {
             return Err(VeltrixError::config_invalid(format!(
                 "unsupported caddy HTTP method: {method}"
-            )))
+            )));
         }
     };
 
@@ -170,9 +177,10 @@ where
         request
     };
 
-    let response = request.send().await.map_err(|err| {
-        VeltrixError::config_invalid(format!("caddy HTTP request failed: {err}"))
-    })?;
+    let response = request
+        .send()
+        .await
+        .map_err(|err| VeltrixError::config_invalid(format!("caddy HTTP request failed: {err}")))?;
 
     let status_code = response.status().as_u16();
     let body = response.bytes().await.map_err(|err| {
@@ -258,7 +266,9 @@ fn parse_status_code(status_line: &str) -> Result<u16> {
     status_line
         .split_whitespace()
         .nth(1)
-        .ok_or_else(|| VeltrixError::config_invalid(format!("invalid HTTP status line: {status_line}")))?
+        .ok_or_else(|| {
+            VeltrixError::config_invalid(format!("invalid HTTP status line: {status_line}"))
+        })?
         .parse::<u16>()
         .map_err(|err| VeltrixError::config_invalid(format!("invalid HTTP status code: {err}")))
 }
