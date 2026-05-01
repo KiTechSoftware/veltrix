@@ -1,3 +1,4 @@
+pub mod clock;
 pub mod paths;
 pub mod process;
 #[cfg(feature = "unistd")]
