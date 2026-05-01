@@ -19,17 +19,18 @@ It is designed for projects that want clean utilities without pulling in large f
 
 ```toml
 [dependencies]
-veltrix = "0.4"
+veltrix = "0.4.1"
 ```
 
 Optional features:
 
 ```toml
-veltrix = { version = "0.4", features = [
+veltrix = { version = "0.4.1", features = [
     "async",
     "podman",
     "docker",
     "caddy",
+    "unicode",
     "unicode-emojis",
 ] }
 ```
@@ -50,6 +51,7 @@ veltrix = { version = "0.4", features = [
 | `caddy`            | Caddy admin API integration                          |
 | `systemd`          | systemd service management helpers                   |
 | `technitium`       | Technitium DNS API integration                       |
+| `full`             | All features except deprecated `emojis`              |
 
 ## Modules
 
