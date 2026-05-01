@@ -63,12 +63,18 @@ pub fn system_doc_dir(app_name: &str) -> PathBuf {
 }
 
 pub fn system_man1_path(bin_name: &str) -> PathBuf {
-    PathBuf::from(constants::PATH_SYSTEM_MAN1_DIR).join(format!("{bin_name}{}{}",constants::EXT_SEPERATOR,constants::MAN_PAGE_EXT))
+    PathBuf::from(constants::PATH_SYSTEM_MAN1_DIR).join(format!(
+        "{bin_name}{}{}",
+        constants::EXT_SEPERATOR,
+        constants::MAN_PAGE_EXT
+    ))
 }
 
 pub fn system_desktop_entry_path(app_name: &str) -> PathBuf {
     PathBuf::from(constants::PATH_SYSTEM_APPLICATIONS_DIR).join(format!(
-        "{app_name}{}{}",constants::EXT_SEPERATOR,constants::APPLICATION_DESKTOP_EXT
+        "{app_name}{}{}",
+        constants::EXT_SEPERATOR,
+        constants::APPLICATION_DESKTOP_EXT
     ))
 }
 
@@ -81,9 +87,10 @@ pub fn systemd_unit_path(app_name: &str) -> PathBuf {
 }
 
 pub fn systemd_unit_name(app_name: &str) -> String {
-    format!("{app_name}{EXT_SEPERATOR}{SYSTEMD_UNIT_EXT}",
-        EXT_SEPERATOR = constants::EXT_SEPERATOR,
-        SYSTEMD_UNIT_EXT = constants::SYSTEMD_UNIT_EXT,
+    format!(
+        "{app_name}{}{}",
+        constants::EXT_SEPERATOR,
+        constants::SYSTEMD_UNIT_EXT,
     )
 }
 
@@ -93,7 +100,11 @@ pub fn systemd_unit_name(app_name: &str) -> String {
 ///
 /// This consults `$XDG_CONFIG_HOME` and falls back to `~/.config`.
 pub fn user_config_dir(app_name: &str) -> Result<PathBuf> {
-    xdg_dir(constants::XDG_CONFIG_DIR_ENV, &[constants::USER_CONFIG_DIR], app_name)
+    xdg_dir(
+        constants::XDG_CONFIG_DIR_ENV,
+        &[constants::USER_CONFIG_DIR],
+        app_name,
+    )
 }
 
 pub fn user_config_path(app_name: &str, config_file_name: &str) -> Result<PathBuf> {
@@ -101,15 +112,27 @@ pub fn user_config_path(app_name: &str, config_file_name: &str) -> Result<PathBu
 }
 
 pub fn user_state_dir(app_name: &str) -> Result<PathBuf> {
-    xdg_dir(constants::XDG_STATE_DIR_ENV, &[constants::USER_STATE_DIR], app_name)
+    xdg_dir(
+        constants::XDG_STATE_DIR_ENV,
+        &[constants::USER_STATE_DIR],
+        app_name,
+    )
 }
 
 pub fn user_cache_dir(app_name: &str) -> Result<PathBuf> {
-    xdg_dir(constants::XDG_CACHE_DIR_ENV, &[constants::USER_CACHE_DIR], app_name)
+    xdg_dir(
+        constants::XDG_CACHE_DIR_ENV,
+        &[constants::USER_CACHE_DIR],
+        app_name,
+    )
 }
 
 pub fn user_data_dir(app_name: &str) -> Result<PathBuf> {
-    xdg_dir(constants::XDG_DATA_DIR_ENV, &[constants::USER_DATA_DIR], app_name)
+    xdg_dir(
+        constants::XDG_DATA_DIR_ENV,
+        &[constants::USER_DATA_DIR],
+        app_name,
+    )
 }
 
 pub fn user_runtime_dir(app_name: &str) -> Result<PathBuf> {
@@ -141,7 +164,12 @@ pub fn user_bin_path(bin_name: &str) -> Result<PathBuf> {
 
 /// Resolve the path to the user's systemd unit directory (e.g. `~/.config/systemd/user`).
 pub fn user_systemd_unit_dir() -> Result<PathBuf> {
-    Ok(xdg_dir(constants::XDG_CONFIG_DIR_ENV, &[constants::USER_CONFIG_DIR], constants::SYSTEMD_DIR_NAME)?.join("user"))
+    Ok(xdg_dir(
+        constants::XDG_CONFIG_DIR_ENV,
+        &[constants::USER_CONFIG_DIR],
+        constants::SYSTEMD_DIR_NAME,
+    )?
+    .join("user"))
 }
 
 pub fn user_systemd_unit_path(app_name: &str) -> Result<PathBuf> {
@@ -149,9 +177,13 @@ pub fn user_systemd_unit_path(app_name: &str) -> Result<PathBuf> {
 }
 
 pub fn user_desktop_entry_path(app_name: &str) -> Result<PathBuf> {
-    Ok(user_data_dir(constants::APPLICATIONS_DIR_NAME)?.join(format!(
-        "{app_name}{}{}",constants::EXT_SEPERATOR,constants::APPLICATION_DESKTOP_EXT
-    )))
+    Ok(
+        user_data_dir(constants::APPLICATIONS_DIR_NAME)?.join(format!(
+            "{app_name}{}{}",
+            constants::EXT_SEPERATOR,
+            constants::APPLICATION_DESKTOP_EXT
+        )),
+    )
 }
 
 pub fn user_icon_dir(app_name: &str) -> Result<PathBuf> {
@@ -235,7 +267,10 @@ pub fn home_dir() -> Result<PathBuf> {
         .ok_or_else(|| VeltrixError::env_missing(constants::USER_HOME_ENV))?;
 
     if !path.is_absolute() {
-        return Err(VeltrixError::env_invalid(constants::USER_HOME_ENV, "must be absolute"));
+        return Err(VeltrixError::env_invalid(
+            constants::USER_HOME_ENV,
+            "must be absolute",
+        ));
     }
 
     Ok(path)

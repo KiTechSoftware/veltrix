@@ -1,4 +1,3 @@
-
 #[derive(Debug, Clone)]
 pub struct CmdSpec {
     pub program: String,
@@ -7,7 +6,6 @@ pub struct CmdSpec {
     pub uid: Option<u32>,
     pub gid: Option<u32>,
 }
-
 
 impl CmdSpec {
     pub fn new(program: impl Into<String>) -> Self {
