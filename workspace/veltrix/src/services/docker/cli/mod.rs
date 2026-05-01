@@ -1,7 +1,7 @@
 #[cfg(feature = "async")]
 mod with_async;
 
-use crate::error::Result;
+use crate::error::{Result, VeltrixError};
 
 use super::spec::{DockerCliSpec, DockerResponse};
 use super::types::{DockerContainerSummary, DockerInfo, DockerVersion};
@@ -29,25 +29,23 @@ impl DockerCliClient {
 
     /// Get Docker version information
     pub fn version(&self) -> Result<DockerResponse<DockerVersion>> {
-        // Placeholder: will implement in v0.5.0
-        Err(crate::error::VeltrixError::Config(
-            "Docker v1 API not yet implemented (v0.5.0 target)".to_string(),
-        ))
+        Err(not_implemented())
     }
 
     /// Get Docker system info
     pub fn info(&self) -> Result<DockerResponse<DockerInfo>> {
-        // Placeholder: will implement in v0.5.0
-        Err(crate::error::VeltrixError::Config(
-            "Docker v1 API not yet implemented (v0.5.0 target)".to_string(),
-        ))
+        Err(not_implemented())
     }
 
     /// List all containers
     pub fn containers(&self) -> Result<DockerResponse<Vec<DockerContainerSummary>>> {
-        // Placeholder: will implement in v0.5.0
-        Err(crate::error::VeltrixError::Config(
-            "Docker v1 API not yet implemented (v0.5.0 target)".to_string(),
-        ))
+        Err(not_implemented())
     }
+}
+
+fn not_implemented() -> VeltrixError {
+    VeltrixError::service(
+        "docker",
+        "Docker v1 API not yet implemented (v0.5.0 target)",
+    )
 }
