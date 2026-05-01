@@ -13,11 +13,27 @@ categories.workspace = true
 
 [features]
 default = []
-paths = []
+
+async = ["tokio/process"]
+
+podman = ["serde", "serde_json"]
+podman-socket = ["podman", "async", "tokio/net", "tokio/io-util"]
+
+caddy = ["async", "serde", "serde_json", "reqwest/json", "tokio/net", "tokio/io-util"]
+
+systemd = []
+technitium = ["async", "serde", "serde_json", "reqwest/json"]
+
+unistd = ["libc"]
 emojis = []
-unistd = ["dep:libc"]
-full = ["paths", "unistd", "emojis"]
 
 [dependencies]
-thiserror.workspace = true
-libc = {version = "0.2.186", optional = true}
+thiserror = "2"
+libc = { version = "0.2", optional = true }
+
+serde = { version = "1", features = ["derive"], optional = true }
+serde_json = { version = "1", optional = true }
+
+tokio = { version = "1", optional = true, features = [] }
+
+reqwest = { version = "0.12", optional = true, default-features = true, features = [] }

@@ -1,5 +1,5 @@
 #[cfg(feature = "unistd")]
-use veltrix::unistd::{
+use veltrix::os::unistd::{
     self, getcwd, geteuid, gethostname, getpid, getppid, getuid, groups_for_uid,
 };
 
@@ -17,7 +17,7 @@ fn main() {
         println!("username: {}", name);
     }
 
-    if let Some(h) = gethostname().ok() {
+    if let Ok(h) = gethostname() {
         println!("hostname: {}", h);
     }
 

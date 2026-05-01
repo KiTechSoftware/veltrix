@@ -190,17 +190,17 @@ fn load_keywords(path: &Path) -> Result<HashMap<String, Vec<String>>, Box<dyn st
 
                 let text = reader.read_text(e.name())?;
 
-                if let Some(cp) = cp {
-                    if !tts {
-                        let words = text
-                            .split('|')
-                            .map(str::trim)
-                            .filter(|s| !s.is_empty())
-                            .map(ToOwned::to_owned)
-                            .collect::<Vec<_>>();
+                if let Some(cp) = cp
+                    && !tts
+                {
+                    let words = text
+                        .split('|')
+                        .map(str::trim)
+                        .filter(|s| !s.is_empty())
+                        .map(ToOwned::to_owned)
+                        .collect::<Vec<_>>();
 
-                        map.entry(cp).or_insert(words);
-                    }
+                    map.entry(cp).or_insert(words);
                 }
             }
             Event::Eof => break,
