@@ -60,5 +60,4 @@ venv/
 # Project-specific ignores
 # ======================
 .old
-docs/
 *.py
