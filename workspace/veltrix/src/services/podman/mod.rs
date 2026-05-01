@@ -4,6 +4,7 @@
 //! wrappers with backend metadata, and a small Libpod Unix-socket client.
 
 pub mod cli;
+pub mod quadlet;
 pub mod spec;
 pub mod types;
 
@@ -11,6 +12,7 @@ pub mod types;
 pub mod socket;
 
 pub use cli::PodmanCliClient;
+pub use quadlet::*;
 pub use spec::*;
 pub use types::*;
 

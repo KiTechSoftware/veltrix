@@ -19,15 +19,16 @@ It is designed for projects that want clean utilities without pulling in large f
 
 ```toml
 [dependencies]
-veltrix = "0.2"
+veltrix = "0.3"
 ```
 
 Optional features:
 
 ```toml
-veltrix = { version = "0.2", features = [
+veltrix = { version = "0.3", features = [
     "async",
     "podman",
+    "docker",
     "caddy",
     "emojis",
 ] }
@@ -42,6 +43,8 @@ veltrix = { version = "0.2", features = [
 | `emojis`           | Emoji constants and lookup helpers                   |
 | `podman`           | Podman CLI/socket integration                        |
 | `podman-socket`    | Podman async Unix-socket backend (implies `podman`)  |
+| `docker`           | Docker CLI/socket/Compose foundation types           |
+| `docker-socket`    | Docker async Unix-socket backend (implies `docker`)  |
 | `caddy`            | Caddy admin API integration                          |
 | `systemd`          | systemd service management helpers                   |
 | `technitium`       | Technitium DNS API integration                       |
@@ -150,19 +153,26 @@ println!("{}", bin.display());
 
 ## `veltrix::services`
 
-Typed integrations for local and self-hosted service management (Podman, Caddy, systemd, Technitium DNS). Each service is feature-gated and provides sync and async APIs.
+Typed integrations for local and self-hosted service management (Podman, Docker, Caddy, systemd, Technitium DNS). Each service is feature-gated; incomplete integrations expose foundation types before full workflow clients.
 
 ```rust
 // Example: Podman (requires "podman" feature)
-use veltrix::services::podman::PodmanCli;
+use veltrix::services::podman::{
+    PodmanAutoUpdatePolicy, PodmanCliClient, PodmanCliSpec, QuadletUnit,
+};
 
-let podman = PodmanCli::new();
-let containers = podman.list_containers().await?;
+let podman = PodmanCliClient::new(PodmanCliSpec::new());
+let containers = podman.containers()?;
+
+let quadlet = QuadletUnit::container("web", "docker.io/library/caddy:latest")
+    .auto_update(PodmanAutoUpdatePolicy::Registry)
+    .render();
 ```
 
 Supported services:
 
 * Podman (container runtime)
+* Docker (container runtime, socket, and Compose foundations)
 * Caddy (web server / reverse proxy)
 * systemd (service management)
 * Technitium DNS (DNS server)

@@ -11,7 +11,10 @@ use super::spec::SUPPORTED_LIBPOD_API_VERSION;
 
 use super::{
     spec::{PodmanBackendUsed, PodmanEmptyResponse, PodmanResponse, PodmanSocketSpec},
-    types::{PodmanContainerSummary, PodmanInfo, PodmanVersion},
+    types::{
+        PodmanContainerSummary, PodmanImageSummary, PodmanInfo, PodmanLogs, PodmanPodSummary,
+        PodmanPullImageReport, PodmanVersion,
+    },
 };
 
 #[derive(Debug, Clone)]
@@ -40,16 +43,67 @@ impl PodmanSocketClient {
         self.get_json("/libpod/containers/json?all=true").await
     }
 
+    pub async fn list_containers_api(&self) -> Result<PodmanResponse<Vec<PodmanContainerSummary>>> {
+        self.get_json("/containers/json?all=true").await
+    }
+
+    pub async fn list_libpod_containers_api(
+        &self,
+    ) -> Result<PodmanResponse<Vec<PodmanContainerSummary>>> {
+        self.get_json("/libpod/containers/json?all=true").await
+    }
+
+    pub async fn inspect_container(&self, id: &str) -> Result<PodmanResponse<serde_json::Value>> {
+        self.get_json(&format!("/libpod/containers/{id}/json"))
+            .await
+    }
+
+    pub async fn container_logs(&self, id: &str) -> Result<PodmanResponse<PodmanLogs>> {
+        let path = format!(
+            "/v{SUPPORTED_LIBPOD_API_VERSION}/libpod/containers/{id}/logs?stdout=true&stderr=true"
+        );
+        let body = http_unix(&self.spec.socket_path, "GET", &path, None).await?;
+
+        Ok(PodmanResponse {
+            backend: self.backend_used(),
+            data: PodmanLogs {
+                output: String::from_utf8(body).map_err(|err| {
+                    VeltrixError::parsing(format!("invalid podman log utf-8: {err}"))
+                })?,
+            },
+        })
+    }
+
+    pub async fn list_pods_api(&self) -> Result<PodmanResponse<Vec<PodmanPodSummary>>> {
+        self.get_json("/libpod/pods/json").await
+    }
+
+    pub async fn inspect_pod(&self, id: &str) -> Result<PodmanResponse<serde_json::Value>> {
+        self.get_json(&format!("/libpod/pods/{id}/json")).await
+    }
+
+    pub async fn list_images_api(&self) -> Result<PodmanResponse<Vec<PodmanImageSummary>>> {
+        self.get_json("/libpod/images/json").await
+    }
+
+    pub async fn pull_image_api(
+        &self,
+        image: &str,
+    ) -> Result<PodmanResponse<PodmanPullImageReport>> {
+        let endpoint = format!(
+            "/libpod/images/pull?reference={}",
+            encode_query_component(image)
+        );
+        self.post_json(&endpoint, None).await
+    }
+
     pub async fn start_container(&self, id: &str) -> Result<PodmanEmptyResponse> {
         let path = format!("/v{SUPPORTED_LIBPOD_API_VERSION}/libpod/containers/{id}/start");
 
         http_unix(&self.spec.socket_path, "POST", &path, None).await?;
 
         Ok(PodmanEmptyResponse {
-            backend: PodmanBackendUsed::Socket {
-                socket_path: self.spec.socket_path.clone(),
-                user: self.spec.user.clone(),
-            },
+            backend: self.backend_used(),
         })
     }
 
@@ -59,10 +113,17 @@ impl PodmanSocketClient {
         http_unix(&self.spec.socket_path, "POST", &path, None).await?;
 
         Ok(PodmanEmptyResponse {
-            backend: PodmanBackendUsed::Socket {
-                socket_path: self.spec.socket_path.clone(),
-                user: self.spec.user.clone(),
-            },
+            backend: self.backend_used(),
+        })
+    }
+
+    pub async fn remove_container(&self, id: &str) -> Result<PodmanEmptyResponse> {
+        let path = format!("/v{SUPPORTED_LIBPOD_API_VERSION}/libpod/containers/{id}");
+
+        http_unix(&self.spec.socket_path, "DELETE", &path, None).await?;
+
+        Ok(PodmanEmptyResponse {
+            backend: self.backend_used(),
         })
     }
 
@@ -84,12 +145,36 @@ impl PodmanSocketClient {
             .map_err(|err| VeltrixError::parsing(format!("invalid podman json: {err}")))?;
 
         Ok(PodmanResponse {
-            backend: PodmanBackendUsed::Socket {
-                socket_path: self.spec.socket_path.clone(),
-                user: self.spec.user.clone(),
-            },
+            backend: self.backend_used(),
             data,
         })
+    }
+
+    async fn post_json<T>(&self, endpoint: &str, body: Option<&[u8]>) -> Result<PodmanResponse<T>>
+    where
+        T: serde::de::DeserializeOwned,
+    {
+        let path = format!("/v{SUPPORTED_LIBPOD_API_VERSION}{endpoint}");
+        let body = http_unix(&self.spec.socket_path, "POST", &path, body).await?;
+
+        let data = if body.is_empty() {
+            serde_json::from_slice(b"{}")
+        } else {
+            serde_json::from_slice(&body)
+        }
+        .map_err(|err| VeltrixError::parsing(format!("invalid podman json: {err}")))?;
+
+        Ok(PodmanResponse {
+            backend: self.backend_used(),
+            data,
+        })
+    }
+
+    fn backend_used(&self) -> PodmanBackendUsed {
+        PodmanBackendUsed::Socket {
+            socket_path: self.spec.socket_path.clone(),
+            user: self.spec.user.clone(),
+        }
     }
 }
 
@@ -174,4 +259,43 @@ fn parse_status_code(status_line: &str) -> Option<u16> {
 
 fn find_header_end(bytes: &[u8]) -> Option<usize> {
     bytes.windows(4).position(|window| window == b"\r\n\r\n")
+}
+
+fn encode_query_component(value: &str) -> String {
+    let mut output = String::new();
+
+    for byte in value.bytes() {
+        match byte {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'.' | b'_' | b'~' => {
+                output.push(byte as char);
+            }
+            _ => output.push_str(&format!("%{byte:02X}")),
+        }
+    }
+
+    output
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn status_code_parser_handles_standard_lines() {
+        assert_eq!(parse_status_code("HTTP/1.1 204 No Content"), Some(204));
+        assert_eq!(parse_status_code("HTTP/1.1 nope"), None);
+    }
+
+    #[test]
+    fn header_end_detects_crlf_separator() {
+        assert_eq!(find_header_end(b"HTTP/1.1 200 OK\r\n\r\n{}"), Some(15));
+    }
+
+    #[test]
+    fn query_component_encoding_handles_image_references() {
+        assert_eq!(
+            encode_query_component("quay.io/example/app:latest"),
+            "quay.io%2Fexample%2Fapp%3Alatest"
+        );
+    }
 }

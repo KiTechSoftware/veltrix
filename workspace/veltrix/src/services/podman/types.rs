@@ -125,6 +125,28 @@ pub struct PodmanImageSummary {
     pub extra: BTreeMap<String, Value>,
 }
 
+/// Image pull progress/report payload returned by Libpod image pull APIs.
+#[derive(Debug, Clone, Deserialize)]
+pub struct PodmanPullImageReport {
+    #[serde(rename = "Id", alias = "id", default)]
+    pub id: Option<String>,
+
+    #[serde(rename = "Images", alias = "images", default)]
+    pub images: Option<Vec<String>>,
+
+    #[serde(rename = "Status", alias = "status", default)]
+    pub status: Option<String>,
+
+    #[serde(rename = "Stream", alias = "stream", default)]
+    pub stream: Option<String>,
+
+    #[serde(rename = "Error", alias = "error", default)]
+    pub error: Option<String>,
+
+    #[serde(flatten)]
+    pub extra: BTreeMap<String, Value>,
+}
+
 /// Secret summary from list operations
 #[derive(Debug, Clone, Deserialize)]
 pub struct PodmanSecretSummary {

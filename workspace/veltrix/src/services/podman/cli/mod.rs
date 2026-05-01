@@ -4,6 +4,7 @@ mod with_async;
 use crate::error::{Result, VeltrixError};
 use crate::os::process::cmd::{spec::CmdSpec, std_cmd};
 
+use super::quadlet::PodmanAutoUpdatePolicy;
 use super::spec::{PodmanBackendUsed, PodmanCliSpec, PodmanEmptyResponse, PodmanResponse};
 use super::types::{
     PodmanContainerSummary, PodmanExecResult, PodmanImageSummary, PodmanInfo, PodmanLogs,
@@ -57,6 +58,29 @@ impl PodmanCliClient {
         S: Into<String>,
     {
         run_string(&self.spec, prefixed_args(["run"], args))
+    }
+
+    /// Run a container with Podman's auto-update label set.
+    pub fn run_container_auto_update<I, S>(
+        &self,
+        policy: PodmanAutoUpdatePolicy,
+        args: I,
+    ) -> Result<PodmanResponse<String>>
+    where
+        I: IntoIterator<Item = S>,
+        S: Into<String>,
+    {
+        run_string(
+            &self.spec,
+            prefixed_args(
+                [
+                    "run".to_string(),
+                    "--label".to_string(),
+                    policy.as_label_arg(),
+                ],
+                args,
+            ),
+        )
     }
 
     /// Inspect a container by name or ID
@@ -266,6 +290,15 @@ impl PodmanCliClient {
         run_string(&self.spec, ["auto-update"])
     }
 
+    /// Run `podman auto-update` with caller-provided arguments.
+    pub fn auto_update_with_args<I, S>(&self, args: I) -> Result<PodmanResponse<String>>
+    where
+        I: IntoIterator<Item = S>,
+        S: Into<String>,
+    {
+        run_string(&self.spec, prefixed_args(["auto-update"], args))
+    }
+
     /// Run `podman compose up` with caller-provided compose arguments.
     pub fn compose_up<I, S>(&self, args: I) -> Result<PodmanEmptyResponse>
     where
@@ -444,4 +477,113 @@ where
     let mut command_args: Vec<String> = prefix.into_iter().map(Into::into).collect();
     command_args.extend(args.into_iter().map(Into::into));
     command_args
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn strings(values: &[&str]) -> Vec<String> {
+        values.iter().map(|value| (*value).to_string()).collect()
+    }
+
+    #[test]
+    fn prefixed_args_preserve_caller_args() {
+        assert_eq!(
+            prefixed_args(["run", "--rm"], ["alpine", "true"]),
+            strings(&["run", "--rm", "alpine", "true"])
+        );
+    }
+
+    #[test]
+    fn auto_update_policy_builds_label_arg() {
+        assert_eq!(
+            prefixed_args(
+                [
+                    "run".to_string(),
+                    "--label".to_string(),
+                    PodmanAutoUpdatePolicy::Registry.as_label_arg(),
+                ],
+                ["docker.io/library/caddy:latest"]
+            ),
+            strings(&[
+                "run",
+                "--label",
+                "io.containers.autoupdate=registry",
+                "docker.io/library/caddy:latest"
+            ])
+        );
+    }
+
+    #[test]
+    fn workflow_command_prefixes_cover_v0_3_cli_surface() {
+        let cases = [
+            (
+                prefixed_args(["run"], ["alpine"]),
+                strings(&["run", "alpine"]),
+            ),
+            (
+                prefixed_args(["build"], ["-t", "image", "."]),
+                strings(&["build", "-t", "image", "."]),
+            ),
+            (
+                prefixed_args(["compose", "up"], ["-d"]),
+                strings(&["compose", "up", "-d"]),
+            ),
+            (
+                prefixed_args(["compose", "down"], std::iter::empty::<&str>()),
+                strings(&["compose", "down"]),
+            ),
+            (
+                prefixed_args(["compose", "logs"], ["web"]),
+                strings(&["compose", "logs", "web"]),
+            ),
+            (
+                prefixed_args(["compose", "ps"], std::iter::empty::<&str>()),
+                strings(&["compose", "ps"]),
+            ),
+            (
+                prefixed_args(["auto-update"], ["--dry-run"]),
+                strings(&["auto-update", "--dry-run"]),
+            ),
+        ];
+
+        for (actual, expected) in cases {
+            assert_eq!(actual, expected);
+        }
+    }
+
+    #[test]
+    fn command_shapes_cover_container_pod_image_and_secret_workflows() {
+        let cases = [
+            strings(&["ps", "--all", "--format", "json"]),
+            strings(&["inspect", "web", "--format", "json"]),
+            strings(&["logs", "web"]),
+            strings(&["stop", "web"]),
+            strings(&["start", "web"]),
+            strings(&["restart", "web"]),
+            strings(&["rm", "web"]),
+            strings(&["exec", "web", "true"]),
+            strings(&["pod", "create", "--name", "stack"]),
+            strings(&["pod", "ps", "--format", "json"]),
+            strings(&["pod", "inspect", "stack", "--format", "json"]),
+            strings(&["pod", "stop", "stack"]),
+            strings(&["pod", "rm", "stack"]),
+            strings(&["images", "--format", "json"]),
+            strings(&["inspect", "image", "--format", "json"]),
+            strings(&["pull", "image"]),
+            strings(&["push", "image"]),
+            strings(&["tag", "image", "target"]),
+            strings(&["rmi", "image"]),
+            strings(&["secret", "ls", "--format", "json"]),
+            strings(&["secret", "create", "name", "-"]),
+            strings(&["secret", "rm", "name"]),
+        ];
+
+        let spec = PodmanCliSpec::new();
+
+        for args in cases {
+            assert_eq!(base_cmd(&spec).args(args.clone()).args, args);
+        }
+    }
 }
