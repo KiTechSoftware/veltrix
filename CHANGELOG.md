@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.7.0
+
+- Removed the legacy top-level `veltrix::emojis` module and `emojis` feature.
+- Kept `veltrix::unicode::emojis` behind the canonical `unicode-emojis` feature.
+- Added structured systemd journal entry APIs using `journalctl -o json`.
+- Added typed systemd unit predicates and list-units coverage.
+- Added `systemd-dbus` with a `busctl`-backed D-Bus client for systemd manager lifecycle, status, predicate, and list-units operations.
+- Added Technitium TXT and general ACME DNS challenge helpers for DNS-01 certificate workflows, with a first-class Caddy record-name helper.
+- Added a Technitium ACME DNS-01 guide and expanded the services example with challenge record setup.
+- Moved broad cross-tool workflow coverage out of the v1 target and into the v2 roadmap.
+
 ## v0.6.0
 
 - Added the feature-gated `veltrix::data` module with boolean parsing/formatting helpers and compact duration parsing/formatting helpers.

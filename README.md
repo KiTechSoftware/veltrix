@@ -20,18 +20,18 @@ It is designed for projects that want clean utilities without pulling in large f
 
 ```toml
 [dependencies]
-veltrix = "0.6.0"
+veltrix = "0.7.0"
 ```
 
 Optional features:
 
 ```toml
-veltrix = { version = "0.6.0", features = [
+veltrix = { version = "0.7.0", features = [
     "async",
     "podman",
     "docker",
     "caddy",
-    "systemd",
+    "systemd-dbus",
     "technitium",
     "data-bools",
     "data-time",
@@ -46,7 +46,6 @@ veltrix = { version = "0.6.0", features = [
 | ------------------ | ---------------------------------------------------- |
 | `async`            | Tokio-based async process execution                  |
 | `unistd`           | Unix identity, group, hostname, and privilege helpers|
-| `emojis`           | Deprecated, use `unicode-emojis`                     |
 | `unicode`          | Unicode parent module                                |
 | `unicode-emojis`   | Canonical Unicode emoji path plus emoji data         |
 | `podman`           | Podman CLI/socket integration                        |
@@ -55,11 +54,12 @@ veltrix = { version = "0.6.0", features = [
 | `docker-socket`    | Docker async Unix-socket backend (implies `docker`)  |
 | `caddy`            | Caddy admin API integration                          |
 | `systemd`          | systemd service management helpers                   |
+| `systemd-dbus`     | systemd D-Bus manager backend via `busctl`           |
 | `technitium`       | Technitium DNS API integration                       |
 | `data`             | Data parent module                                   |
 | `data-bools`       | Boolean parsing and formatting helpers               |
 | `data-time`        | Time value parsing and formatting helpers            |
-| `full`             | All features except deprecated `emojis`              |
+| `full`             | All non-legacy feature groups                        |
 
 ## Modules
 
@@ -246,13 +246,16 @@ use veltrix::services::systemd::{SystemdCliClient, SystemdCliSpec};
 
 let systemd = SystemdCliClient::new(SystemdCliSpec::new().user());
 let status = systemd.status("app.service")?;
-let logs = systemd.tail_journal("app.service", 100)?;
+let active = systemd.is_active("app.service")?;
+let units = systemd.list_units(Some("app*.service"))?;
+let logs = systemd.tail_journal_entries("app.service", 100)?;
 ```
 
 ```rust
 // Example: Technitium DNS (requires "technitium" feature)
 use veltrix::services::technitium::{
     TechnitiumAuth, TechnitiumClient, TechnitiumHttpSpec, TechnitiumRecordType,
+    acme_challenge_name, caddy_acme_challenge_name,
 };
 
 let dns = TechnitiumClient::new(
@@ -262,6 +265,9 @@ let dns = TechnitiumClient::new(
 
 let zones = dns.zones().await?;
 let answer = dns.resolve("app.local", TechnitiumRecordType::A).await?;
+let record = acme_challenge_name("app.local");
+let caddy_record = caddy_acme_challenge_name("app.local");
+dns.set_acme_challenge("local", "app.local", "dns-01-token", Some(60)).await?;
 ```
 
 Supported services:
@@ -271,6 +277,8 @@ Supported services:
 * Caddy (web server / reverse proxy)
 * systemd (service management)
 * Technitium DNS (DNS server)
+
+See [Technitium ACME DNS-01 Certificates](docs/api/v0/technitium-acme.md) for the v0.7.0 certificate helper flow.
 
 ## `veltrix::unicode::emojis`
 
@@ -299,7 +307,7 @@ Each emoji entry includes:
 * Unicode Emoji data version
 * skin-tone and variation-selector metadata
 
-The legacy `veltrix::emojis` path remains available during the transition.
+The legacy `veltrix::emojis` path was removed for v0.7.0. Use `veltrix::unicode::emojis`.
 
 ## Design Goals
 
