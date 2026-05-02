@@ -1,16 +1,19 @@
 #[cfg(feature = "unistd")]
 use veltrix::os::unistd::{
-    self, getcwd, geteuid, gethostname, getpid, getppid, getuid, groups_for_uid,
+    self, getcwd, getegid, geteuid, getgid, gethostname, getpid, getppid, getuid, groups_for_uid,
 };
 
 #[cfg(feature = "unistd")]
 fn main() {
     let uid = getuid();
     let euid = geteuid();
+    let gid = getgid();
+    let egid = getegid();
     let pid = getpid();
     let ppid = getppid();
 
     println!("uid: {}  euid: {}", uid, euid);
+    println!("gid: {}  egid: {}", gid, egid);
     println!("pid: {}  ppid: {}", pid, ppid);
 
     if let Some(name) = unistd::username_by_uid(uid) {
@@ -36,5 +39,7 @@ fn main() {
 #[cfg(not(feature = "unistd"))]
 fn main() {
     eprintln!("Enable the `unistd` feature to run this example:");
-    eprintln!("  cargo run --example unistd_demo --features unistd");
+    eprintln!(
+        "  cargo run --manifest-path workspace/Cargo.toml -p veltrix --example unistd_demo --features unistd"
+    );
 }
