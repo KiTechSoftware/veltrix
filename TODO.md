@@ -222,16 +222,16 @@ Extend `VeltrixError` to cover services domain:
 
 - [x] Structured journal entries where `journalctl -o json` is available
 - [x] D-Bus backend feature via `systemd-dbus`
-- [ ] Expand D-Bus coverage beyond lifecycle/status where practical
-- [ ] Add typed status predicates: active, enabled, failed
-- [ ] Add list-units coverage
+- [x] Expand D-Bus coverage beyond lifecycle/status where practical
+- [x] Add typed status predicates: active, enabled, failed
+- [x] Add list-units coverage
 
-### Technitium for Caddy Certificates
+### Technitium for ACME Certificates
 
 - [x] TXT record helpers for DNS-01 challenges
-- [x] Caddy ACME `_acme-challenge` helper methods
-- [ ] Document Caddy + Technitium certificate flow
-- [ ] Add example using Technitium to set/remove Caddy ACME records
+- [x] General ACME `_acme-challenge` helper methods
+- [x] Document Technitium ACME certificate flow
+- [x] Add example using Technitium to set/remove ACME records
 
 ### Deferred to v2
 
@@ -242,8 +242,8 @@ Extend `VeltrixError` to cover services domain:
 
 ### Validation
 
-- [ ] `just lint` passes
-- [ ] `just test` passes
+- [x] `just lint` passes
+- [x] `just test` passes
 
 **Deliverables:** systemd contract alignment, D-Bus backend, structured journals, and Technitium DNS helpers needed for Caddy certificate issuance.
 

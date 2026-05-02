@@ -825,8 +825,9 @@ add_blocked_domain
 add_allowed_domain
 set_txt_record
 remove_txt_record
-set_caddy_acme_challenge
-remove_caddy_acme_challenge
+set_acme_challenge
+remove_acme_challenge
+caddy_acme_challenge_name
 ```
 
 Supported DNS record types should be explicit and typed.

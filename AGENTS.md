@@ -40,15 +40,16 @@ Direct cargo invocations must include `--manifest-path workspace/Cargo.toml`.
 | `veltrix::os::paths`        |  none            | replaces v0.1.0 `veltrix::paths`       |
 | `veltrix::os::process`      | —                | replaces v0.1.0 `veltrix::process`     |
 | `veltrix::os::unistd`       | `unistd`         | replaces v0.1.0 `veltrix::unistd`      |
+| `veltrix::os::clock`        | —                | runtime and platform clock helpers     |
 | `veltrix::services::podman` | `podman`         |                                        |
 | `veltrix::services::caddy`  | `caddy`          |                                        |
 | `veltrix::services::systemd`| `systemd`        |                                        |
 | `veltrix::services::technitium` | `technitium` |                                        |
-| `veltrix::emojis`           | `emojis`         | long-term path: `veltrix::unicode::emojis` |
+| `veltrix::unicode::emojis`  | `unicode-emojis` | canonical emoji metadata path              |
 
 Top-level `veltrix::paths` and `veltrix::unistd` are v0.1.0 paths — deprecated from v0.2.0 onward.
 
-**Planned (not v0.2.0):** `veltrix::unicode` (v0.4.0+), `veltrix::data` (v0.4.0+), `veltrix::os::clock`.
+**Planned (not v0.2.0):** `veltrix::unicode` (v0.4.0+), `veltrix::data` (v0.4.0+).
 
 ## Feature flags
 
@@ -56,7 +57,8 @@ Top-level `veltrix::paths` and `veltrix::unistd` are v0.1.0 paths — deprecated
 |-----------------|------------------------------------------------------|
 | `async`         | Tokio-based async process execution                  |
 | `unistd`        | Unix identity, group, hostname, and privilege helpers|
-| `emojis`        | Emoji constants and lookup helpers                   |
+| `unicode`       | Unicode parent module                                |
+| `unicode-emojis`| Canonical Unicode emoji constants and lookup helpers |
 | `podman`        | Podman CLI/socket integration                        |
 | `podman-socket` | Podman async Unix-socket backend (implies `podman`)  |
 | `caddy`         | Caddy admin API integration                          |
@@ -65,7 +67,7 @@ Top-level `veltrix::paths` and `veltrix::unistd` are v0.1.0 paths — deprecated
 
 ## Code generator
 
-`veltrix-codegen` is the workspace's **general-purpose code generator**. It currently generates emoji data (`src/emojis/`). It is planned to cover additional domains as the crate grows.
+`veltrix-codegen` is the workspace's **general-purpose code generator**. It currently generates emoji data (`src/unicode/emojis/`). It is planned to cover additional domains as the crate grows.
 
 - **Never hand-edit generated output files.** Re-run the generator instead.
 - Run: `cargo run --manifest-path workspace/Cargo.toml -p veltrix-codegen`
@@ -79,6 +81,19 @@ Before adding or modifying any public API surface, read the relevant contract:
 - [Services contract](docs/api/contract/services.md) — service integration scope and response model conventions
 - [Unicode contract](docs/api/contract/unicode.md) — `veltrix::unicode` and future `emojis` path
 - [Data contract](docs/api/contract/data.md) — `veltrix::data` planned domain and boundaries
+
+## Error handling patterns
+
+Service integrations should use domain-specific `VeltrixError` variants:
+
+- `Parsing` for JSON/YAML/HTTP response parsing failures
+- `Service` for CLI/API errors returned by Podman, Docker, Caddy, systemd, or Technitium
+- `Socket` for Unix socket connection/read/write failures
+- `Http` for non-2xx HTTP API responses
+- `Auth` for missing, invalid, or rejected credentials
+- `Validation` for invalid caller-provided fields or unsupported options
+
+Do not log raw credentials, bearer tokens, session tokens, or full authorization headers.
 
 ## Commit conventions
 
