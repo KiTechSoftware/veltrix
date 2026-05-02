@@ -1,8 +1,6 @@
 //! Unicode-specific helpers.
 //!
-//! v0.4.0 introduces this parent module as the canonical home for Unicode
-//! domains. The legacy top-level `veltrix::emojis` module remains available
-//! behind the `emojis` feature during the transition.
+//! This parent module is the canonical home for Unicode domains.
 
 #[cfg(feature = "unicode-emojis")]
 /// Emoji constants and lookup helpers.
