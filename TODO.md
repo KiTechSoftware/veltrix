@@ -8,72 +8,72 @@
 
 ### Podman Completion
 
-- [ ] Complete Podman CLI API surface
-  - [ ] Container operations: run, build, exec, list, inspect, logs, stop, start, restart, remove
-  - [ ] Pod management: create, run-in-pod, list, stop, remove, inspect
-  - [ ] Image operations: build, pull, push, list, remove, tag
-  - [ ] Kubernetes YAML: generate-kube, play-kube, play-kube-down
-  - [ ] Systemd/Quadlet: generate-systemd (legacy), Quadlet integration patterns
-  - [ ] Machine: init, start, stop, ssh, list (macOS/Windows)
-  - [ ] System operations: prune, reset
-  - [ ] Secret management: create, list, remove
-  - [ ] Compose support: up, down, logs, ps
-  - [ ] Auto-update label support
-- [ ] Implement Libpod REST API wrapper (v5.0.0)
-  - [ ] Typed response structs for all v1 workflows
-  - [ ] Backend metadata tracking (CLI vs socket distinction)
-- [ ] Test all Container/Pod/Image/Secret workflows
-- [ ] Verify Quadlet systemd integration patterns
+- [x] Complete Podman CLI API surface
+  - [x] Container operations: run, exec, list, inspect, logs, stop, start, restart, remove
+  - [x] Pod management: create, run-in-pod, list, stop, remove, inspect
+  - [x] Image operations: build, pull, push, list, remove, tag
+  - [x] Kubernetes YAML: generate-kube, play-kube, play-kube-down
+  - [x] Systemd/Quadlet: generate-systemd (legacy), Quadlet integration patterns
+  - [x] Machine: init, start, stop, ssh, list (macOS/Windows)
+  - [x] System operations: prune, reset
+  - [x] Secret management: create, list, remove
+  - [x] Compose support: up, down, logs, ps
+  - [x] Auto-update label support
+- [x] Implement Libpod REST API wrapper (v5.0.0)
+  - [x] Typed response structs for all v1 workflows
+  - [x] Backend metadata tracking (CLI vs socket distinction)
+- [x] Test all Container/Pod/Image/Secret workflows
+- [x] Verify Quadlet systemd integration patterns
 
 ### Docker Module Skeleton
 
-- [ ] Create `services::docker` module structure
-  - [ ] `docker::spec` — CLI, Socket, Compose specs with backend enum
-  - [ ] `docker::types` — Response types for v0.5.0 implementation
-  - [ ] `docker::cli` — Stub client (placeholder methods)
-- [ ] Add feature flags: `docker`, `docker-socket`
-- [ ] Update Cargo.toml and lib.rs
-- [ ] Update README with Docker feature descriptions
+- [x] Create `services::docker` module structure
+  - [x] `docker::spec` — CLI, Socket, Compose specs with backend enum
+  - [x] `docker::types` — Response types for v0.5.0 implementation
+  - [x] `docker::cli` — Stub client (placeholder methods)
+- [x] Add feature flags: `docker`, `docker-socket`
+- [x] Update Cargo.toml and lib.rs
+- [x] Update README with Docker feature descriptions
 
 ### Technitium API Pinning
 
-- [ ] Document supported Technitium API version
-- [ ] Define authentication model:
-  - [ ] Session token handling
-  - [ ] Bearer-token behavior spec
-  - [ ] Never-log-credentials rule
-- [ ] Update services.md with auth section
-- [ ] Add basic types for Technitium response schema
+- [x] Document supported Technitium API version
+- [x] Define authentication model:
+  - [x] Session token handling
+  - [x] Bearer-token behavior spec
+  - [x] Never-log-credentials rule
+- [x] Update services.md with auth section
+- [x] Add basic types for Technitium response schema
 
 ### Error Type Expansion
 
 Extend `VeltrixError` to cover services domain:
 
-- [ ] Add new error variants:
-  - [ ] `Parsing(String)` — JSON/YAML parsing failures in service responses
-  - [ ] `Service { service: String, reason: String }` — Service-specific API errors
-  - [ ] `Socket { reason: String }` — Unix socket communication errors
-  - [ ] `Http { status: u16, reason: String }` — HTTP API errors (Caddy, Technitium, Docker socket)
-  - [ ] `Auth { reason: String }` — Authentication/credential errors (Technitium, Caddy)
-  - [ ] `Validation { field: String, reason: String }` — Configuration/input validation errors
-- [ ] Add helper constructors on `VeltrixError` impl block:
-  - [ ] `VeltrixError::parsing(reason)`
-  - [ ] `VeltrixError::service(service, reason)`
-  - [ ] `VeltrixError::socket(reason)`
-  - [ ] `VeltrixError::http(status, reason)`
-  - [ ] `VeltrixError::auth(reason)`
-  - [ ] `VeltrixError::validation(field, reason)`
-- [ ] Update `src/error.rs` thiserror Display implementations
-- [ ] Update all service modules to use new error variants
-- [ ] Add error handling tests covering each variant
-- [ ] Document error handling patterns in AGENTS.md
+- [x] Add new error variants:
+  - [x] `Parsing(String)` — JSON/YAML parsing failures in service responses
+  - [x] `Service { service: String, reason: String }` — Service-specific API errors
+  - [x] `Socket { reason: String }` — Unix socket communication errors
+  - [x] `Http { status: u16, reason: String }` — HTTP API errors (Caddy, Technitium, Docker socket)
+  - [x] `Auth { reason: String }` — Authentication/credential errors (Technitium, Caddy)
+  - [x] `Validation { field: String, reason: String }` — Configuration/input validation errors
+- [x] Add helper constructors on `VeltrixError` impl block:
+  - [x] `VeltrixError::parsing(reason)`
+  - [x] `VeltrixError::service(service, reason)`
+  - [x] `VeltrixError::socket(reason)`
+  - [x] `VeltrixError::http(status, reason)`
+  - [x] `VeltrixError::auth(reason)`
+  - [x] `VeltrixError::validation(field, reason)`
+- [x] Update `src/error.rs` thiserror Display implementations
+- [x] Update all service modules to use new error variants
+- [x] Add error handling tests covering each variant
+- [x] Document error handling patterns in AGENTS.md
 
 ### Cleanup & Validation
 
-- [ ] Audit `services::systemd` — remove placeholder, keep only real behavior
-- [ ] Audit `services::caddy` — ensure skeleton-only, no premature v0.5.0 impl
-- [ ] Run `just lint` — resolve all clippy warnings
-- [ ] Run `just test` — all tests passing
+- [x] Audit `services::systemd` — remove placeholder, keep only real behavior
+- [x] Audit `services::caddy` — ensure skeleton-only, no premature v0.5.0 impl
+- [x] Run `just lint` — resolve all clippy warnings
+- [x] Run `just test` — all tests passing
 - [ ] Make scoped commits per API group
 
 **Deliverables:** Podman v1 complete, Docker skeleton + features added, Technitium auth pinned, no regressions.
@@ -84,31 +84,31 @@ Extend `VeltrixError` to cover services domain:
 
 ### Unicode Module Setup
 
-- [ ] Create `veltrix::unicode` module structure (placeholder for v0.4.0+)
-- [ ] Plan emoji transition: `veltrix::emojis` (v0.2.0 path) → `veltrix::unicode::emojis` (v0.4.0+)
-- [ ] Update docs/api/contract/unicode.md with migration timeline
+- [x] Create `veltrix::unicode` module structure (placeholder for v0.4.0+)
+- [x] Plan emoji transition: `veltrix::emojis` (v0.2.0 path) → `veltrix::unicode::emojis` (v0.4.0+)
+- [x] Update docs/api/contract/unicode.md with migration timeline
 
 ### Emoji Schema Upgrade
 
-- [ ] Review emoji data source (CLDR + Unicode emoji)
-- [ ] Define emoji struct schema enhancements:
-  - [ ] Metadata fields (skin tones, variation selectors, etc.)
-  - [ ] Search-friendly attributes
-  - [ ] Version tracking (Unicode version support)
-- [ ] Update veltrix-codegen to emit new schema
-- [ ] Run code generator: `cargo run --manifest-path workspace/Cargo.toml -p veltrix-codegen`
+- [x] Review emoji data source (CLDR + Unicode emoji)
+- [x] Define emoji struct schema enhancements:
+  - [x] Metadata fields (skin tones, variation selectors, etc.)
+  - [x] Search-friendly attributes
+  - [x] Version tracking (Unicode version support)
+- [x] Update veltrix-codegen to emit new schema
+- [x] Run code generator: `cargo run --manifest-path workspace/Cargo.toml -p veltrix-codegen`
 
 ### Codegen Pipeline
 
-- [ ] Ensure veltrix-codegen is general-purpose framework (not emoji-only)
-- [ ] Document codegen architecture for future domains (v0.6.0 data)
-- [ ] Test round-trip: source data → generated code → compiles + passes tests
+- [x] Ensure veltrix-codegen is general-purpose framework (not emoji-only)
+- [x] Document codegen architecture for future domains (v0.6.0 data)
+- [x] Test round-trip: source data → generated code → compiles + passes tests
 
 ### Validation
 
-- [ ] `just lint` passes
-- [ ] `just test` passes (including emoji tests)
-- [ ] Examples updated to use new schema
+- [x] `just lint` passes
+- [x] `just test` passes (including emoji tests)
+- [x] Examples updated to use new schema
 
 **Deliverables:** Unicode module skeleton, emoji schema upgraded, codegen pipeline validated.
 
@@ -118,34 +118,34 @@ Extend `VeltrixError` to cover services domain:
 
 ### Docker v1 Complete Implementation
 
-- [ ] Docker CLI backend:
-  - [ ] run, build, exec, list, inspect, logs, stop, start, restart, remove
-  - [ ] image: list, pull, tag, push, remove, build
-  - [ ] Compose: up, down, logs, ps
-  - [ ] Volume: create, list, remove, inspect
-  - [ ] Network: create, list, remove, connect
-  - [ ] System: prune, df
-- [ ] Docker socket backend (Unix socket API v1.40+):
-  - [ ] Container operations via Engine API
-  - [ ] Image operations via Engine API
-  - [ ] Network/volume operations
-- [ ] Docker Compose backend support
-- [ ] Typed response structs, backend metadata
-- [ ] Test all workflows
+- [x] Docker CLI backend:
+  - [x] run, build, exec, list, inspect, logs, stop, start, restart, remove
+  - [x] image: list, pull, tag, push, remove, build
+  - [x] Compose: up, down, logs, ps
+  - [x] Volume: create, list, remove, inspect
+  - [x] Network: create, list, remove, connect
+  - [x] System: prune, df
+- [x] Docker socket backend (Unix socket API v1.40+):
+  - [x] Container operations via Engine API
+  - [x] Image operations via Engine API
+  - [x] Network/volume operations
+- [x] Docker Compose backend support
+- [x] Typed response structs, backend metadata
+- [x] Test all workflows
 
 ### Caddy v1 Complete Implementation
 
-- [ ] CLI workflows:
-  - [ ] validate, fmt, reload, stop, run
-  - [ ] Admin API configuration
-- [ ] Caddyfile parsing + management
-- [ ] Local HTTPS setup
-- [ ] Reverse proxy configuration
+- [x] CLI workflows:
+  - [x] validate, fmt, reload, stop, run
+  - [x] Admin API configuration
+- [x] Caddyfile parsing + management
+- [x] Local HTTPS setup
+- [x] Reverse proxy configuration
 - [ ] Admin API v2 client:
-  - [ ] Configuration read/write
-  - [ ] Runtime config updates
-  - [ ] Module management
-- [ ] Test all workflows
+  - [x] Configuration read/write
+  - [x] Runtime config updates
+  - [x] Module management
+- [x] Test all implemented workflows
 
 ### Integration Testing
 
@@ -155,8 +155,8 @@ Extend `VeltrixError` to cover services domain:
 
 ### Validation
 
-- [ ] `just lint` passes
-- [ ] `just test` passes
+- [x] `just lint` passes
+- [x] `just test` passes
 - [ ] All workflows from guide tested
 
 **Deliverables:** Docker v1 and Caddy v1 APIs complete, fully tested, ready for integration.
@@ -165,88 +165,87 @@ Extend `VeltrixError` to cover services domain:
 
 ## v0.6.0: Data Domain & Service Completions
 
+### OS Clock Module
+
+- [x] Create `veltrix::os::clock` module
+- [x] Add wall-clock and monotonic runtime helpers
+- [x] Add Unix timestamp helper
+- [x] Add Linux-backed uptime, process CPU time, and thread CPU time helpers
+- [x] Document platform behavior and data/time boundary
+
 ### Data Domain Module
 
-- [ ] Create `veltrix::data` module (planned v0.6.0+)
-- [ ] Define data types:
-  - [ ] `veltrix::data::bool` — Boolean utilities
-  - [ ] `veltrix::data::time` — Time value helpers
-- [ ] Feature-gated data types
-- [ ] Update Cargo.toml with `data` feature flag
+- [x] Create `veltrix::data` module (planned v0.6.0+)
+- [x] Define data types:
+  - [x] `veltrix::data::bools` — Boolean utilities
+  - [x] `veltrix::data::time` — Time value helpers
+- [x] Feature-gated data types
+- [x] Update Cargo.toml with `data` feature flag
 
 ### systemd Completion
 
-- [ ] Service lifecycle: start, stop, restart, enable, disable
-- [ ] Unit inspection: status, properties, dependencies
-- [ ] Journal access: retrieve logs, tail, filtering
-- [ ] Unit-file operations: edit, reload
-- [ ] Timers: list, enable, disable
-- [ ] Overrides: manage system.d overrides
-- [ ] Templates: support template units
-- [ ] Resource limits: CPU, memory, device management
-- [ ] Watchdog/deployment: watchdog setup, deployment patterns
+- [x] Service lifecycle: start, stop, restart, enable, disable
+- [x] Unit inspection: status, properties, dependencies
+- [x] Journal access: retrieve logs, tail, filtering
+- [x] Unit-file operations: edit, reload
+- [x] Timers: list, enable, disable
+- [x] Overrides: manage system.d overrides
+- [x] Templates: support template units
+- [x] Resource limits: CPU, memory, device management
+- [x] Watchdog/deployment: watchdog setup, deployment patterns
 
 ### Technitium Completion
 
-- [ ] Authentication workflows (session token + bearer token)
-- [ ] Zone management: create, list, update, delete
-- [ ] DNS record management: A, AAAA, CNAME, MX, etc.
-- [ ] Settings: read/update server settings
-- [ ] Resolving: DNS query simulation
-- [ ] Logs: access and filter logs
-- [ ] Stats: retrieve server statistics
-- [ ] Blocking: manage blocklist entries
-- [ ] CI/CD automation: zone import, record bulk operations
+- [x] Authentication workflows (session token + bearer token)
+- [x] Zone management: create, list, update, delete
+- [x] DNS record management: A, AAAA, CNAME, MX, etc.
+- [x] Settings: read/update server settings
+- [x] Resolving: DNS query simulation
+- [x] Logs: access and filter logs
+- [x] Stats: retrieve server statistics
+- [x] Blocking: manage blocklist entries
+- [x] CI/CD automation: zone import, record bulk operations
 
 ### Validation
 
-- [ ] `just lint` passes
-- [ ] `just test` passes
-- [ ] All service integrations tested
+- [x] `just lint` passes
+- [x] `just test` passes
+- [x] All service integrations tested
 
 **Deliverables:** Data domain skeleton, systemd and Technitium v1 complete.
 
 ---
 
-## v0.7.0: Cross-Tool Integration Patterns
+## v0.7.0: systemd Completion & Caddy DNS Support
 
-### Integration Workflows
+### systemd Focus
 
-- [ ] Docker/Podman + Caddy:
-  - [ ] Container discovery
-  - [ ] Automatic reverse proxy setup
-  - [ ] Health check integration
-- [ ] Containers + systemd:
-  - [ ] Container lifecycle via systemd unit files
-  - [ ] Automatic restart policies
-  - [ ] Resource limits via systemd
-- [ ] Caddy + Technitium DNS:
-  - [ ] Local DNS setup with Technitium
-  - [ ] HTTPS certificate provisioning
-  - [ ] Domain resolution from Technitium
-- [ ] systemd timers + containerized jobs:
-  - [ ] Schedule container jobs via systemd timers
-  - [ ] Output logging to journal
-- [ ] Full-stack local development environment:
-  - [ ] Multi-container setup (podman)
-  - [ ] Reverse proxy (caddy)
-  - [ ] Local DNS (technitium)
-  - [ ] Service lifecycle (systemd)
+- [x] Structured journal entries where `journalctl -o json` is available
+- [x] D-Bus backend feature via `systemd-dbus`
+- [ ] Expand D-Bus coverage beyond lifecycle/status where practical
+- [ ] Add typed status predicates: active, enabled, failed
+- [ ] Add list-units coverage
 
-### Test Scenarios
+### Technitium for Caddy Certificates
 
-- [ ] Full stack initialization
-- [ ] Service discovery and wiring
-- [ ] Failure recovery patterns
-- [ ] Configuration hot-reload
+- [x] TXT record helpers for DNS-01 challenges
+- [x] Caddy ACME `_acme-challenge` helper methods
+- [ ] Document Caddy + Technitium certificate flow
+- [ ] Add example using Technitium to set/remove Caddy ACME records
+
+### Deferred to v2
+
+- [ ] Docker/Podman + Caddy automatic reverse proxy
+- [ ] Containers + systemd full-stack orchestration
+- [ ] systemd timers + containerized jobs
+- [ ] Full-stack local development environment
 
 ### Validation
 
-- [ ] Integration test suite passes
-- [ ] Example full-stack setup documented
+- [ ] `just lint` passes
 - [ ] `just test` passes
 
-**Deliverables:** Cross-tool patterns demonstrated, integration tests passing.
+**Deliverables:** systemd contract alignment, D-Bus backend, structured journals, and Technitium DNS helpers needed for Caddy certificate issuance.
 
 ---
 
@@ -326,6 +325,40 @@ Extend `VeltrixError` to cover services domain:
 - [ ] Ready for v1.0.0 (final polish only)
 
 **Deliverables:** v0.9.0 released, all v1 features implemented, stable and ready for v1.0.0 polish.
+
+---
+
+## v0.10.0: Cross-Tool Integration Patterns
+
+### Integration Workflows
+
+- [ ] Docker/Podman + Caddy:
+  - [ ] Container discovery
+  - [ ] Automatic reverse proxy setup
+  - [ ] Health check integration
+- [ ] Containers + systemd:
+  - [ ] Container lifecycle via systemd unit files
+  - [ ] Automatic restart policies
+  - [ ] Resource limits via systemd
+- [ ] Caddy + Technitium DNS:
+  - [ ] Local DNS setup with Technitium
+  - [ ] HTTPS certificate provisioning
+  - [ ] Domain resolution from Technitium
+- [ ] systemd timers + containerized jobs:
+  - [ ] Schedule container jobs via systemd timers
+  - [ ] Output logging to journal
+- [ ] Full-stack local development environment:
+  - [ ] Multi-container setup (podman)
+  - [ ] Reverse proxy (caddy)
+  - [ ] Local DNS (technitium)
+  - [ ] Service lifecycle (systemd)
+
+### Test Scenarios
+
+- [ ] Full stack initialization
+- [ ] Service discovery and wiring
+- [ ] Failure recovery patterns
+- [ ] Configuration hot-reload
 
 ---
 
