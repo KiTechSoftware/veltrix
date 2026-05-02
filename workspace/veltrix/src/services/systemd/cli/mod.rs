@@ -5,7 +5,7 @@ use super::{
     spec::{SystemdBackendUsed, SystemdCliSpec, SystemdEmptyResponse, SystemdResponse},
     types::{
         SystemdDependency, SystemdJournal, SystemdJournalEntry, SystemdResourceLimit,
-        SystemdUnitFile, SystemdUnitStatus,
+        SystemdUnitFile, SystemdUnitStatus, SystemdUnitSummary,
     },
 };
 
@@ -75,6 +75,32 @@ impl SystemdCliClient {
         let output = self.systemctl_output(["show", unit, "--no-page"])?;
 
         Ok(SystemdResponse::new(output, self.backend_used()))
+    }
+
+    pub fn is_active(&self, unit: &str) -> Result<SystemdResponse<bool>> {
+        let status = self.status(unit)?;
+        Ok(SystemdResponse::new(
+            status.data.active_state.as_deref() == Some("active"),
+            self.backend_used(),
+        ))
+    }
+
+    pub fn is_enabled(&self, unit: &str) -> Result<SystemdResponse<bool>> {
+        let output = self.systemctl_output(["show", unit, "-p", "UnitFileState", "--no-page"])?;
+        let enabled = matches!(
+            property(&output, "UnitFileState").as_deref(),
+            Some("enabled" | "enabled-runtime")
+        );
+
+        Ok(SystemdResponse::new(enabled, self.backend_used()))
+    }
+
+    pub fn is_failed(&self, unit: &str) -> Result<SystemdResponse<bool>> {
+        let status = self.status(unit)?;
+        Ok(SystemdResponse::new(
+            status.data.active_state.as_deref() == Some("failed"),
+            self.backend_used(),
+        ))
     }
 
     pub fn dependencies(&self, unit: &str) -> Result<SystemdResponse<Vec<SystemdDependency>>> {
@@ -274,6 +300,28 @@ impl SystemdCliClient {
         ))
     }
 
+    pub fn list_units(
+        &self,
+        pattern: Option<&str>,
+    ) -> Result<SystemdResponse<Vec<SystemdUnitSummary>>> {
+        let mut args = vec![
+            "list-units".to_string(),
+            "--all".to_string(),
+            "--no-pager".to_string(),
+            "--plain".to_string(),
+            "--no-legend".to_string(),
+        ];
+        if let Some(pattern) = pattern {
+            args.push(pattern.to_string());
+        }
+
+        let output = self.systemctl_output(args)?;
+        Ok(SystemdResponse::new(
+            parse_units(&output),
+            self.backend_used(),
+        ))
+    }
+
     pub fn list_timers(&self) -> Result<SystemdResponse<String>> {
         let output = self.systemctl_output(["list-timers", "--all", "--no-pager"])?;
         Ok(SystemdResponse::new(output, self.backend_used()))
@@ -437,6 +485,28 @@ fn parse_unit_files(output: &str) -> Vec<SystemdUnitFile> {
         .collect()
 }
 
+fn parse_units(output: &str) -> Vec<SystemdUnitSummary> {
+    output
+        .lines()
+        .filter_map(|line| {
+            let mut parts = line.split_whitespace();
+            let unit = parts.next()?;
+            let load_state = parts.next().map(ToOwned::to_owned);
+            let active_state = parts.next().map(ToOwned::to_owned);
+            let sub_state = parts.next().map(ToOwned::to_owned);
+            let description = parts.collect::<Vec<_>>().join(" ");
+
+            Some(SystemdUnitSummary {
+                unit: unit.to_string(),
+                load_state,
+                active_state,
+                sub_state,
+                description: (!description.is_empty()).then_some(description),
+            })
+        })
+        .collect()
+}
+
 fn parse_journal_entries(output: &str) -> Result<Vec<SystemdJournalEntry>> {
     output
         .lines()
@@ -495,5 +565,19 @@ mod tests {
         assert_eq!(entries[0].message.as_deref(), Some("started"));
         assert_eq!(entries[0].unit.as_deref(), Some("demo.service"));
         assert_eq!(entries[0].priority.as_deref(), Some("6"));
+    }
+
+    #[test]
+    fn parses_list_units_output() {
+        let units = parse_units(
+            "demo.service loaded active running Demo Service\nother.timer loaded inactive dead Other Timer\n",
+        );
+
+        assert_eq!(units.len(), 2);
+        assert_eq!(units[0].unit, "demo.service");
+        assert_eq!(units[0].load_state.as_deref(), Some("loaded"));
+        assert_eq!(units[0].active_state.as_deref(), Some("active"));
+        assert_eq!(units[0].sub_state.as_deref(), Some("running"));
+        assert_eq!(units[0].description.as_deref(), Some("Demo Service"));
     }
 }

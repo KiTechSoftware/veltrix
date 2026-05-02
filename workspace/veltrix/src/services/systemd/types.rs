@@ -12,6 +12,16 @@ pub struct SystemdUnitStatus {
     pub description: Option<String>,
 }
 
+/// Summary entry returned by unit listing workflows.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SystemdUnitSummary {
+    pub unit: String,
+    pub load_state: Option<String>,
+    pub active_state: Option<String>,
+    pub sub_state: Option<String>,
+    pub description: Option<String>,
+}
+
 /// systemd unit-file listing entry.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SystemdUnitFile {

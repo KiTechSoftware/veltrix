@@ -3,7 +3,7 @@ use crate::os::process::cmd::{spec::CmdSpec, std_cmd};
 
 use super::{
     spec::{SystemdBackendUsed, SystemdDbusSpec, SystemdEmptyResponse, SystemdResponse},
-    types::{SystemdJob, SystemdUnitStatus},
+    types::{SystemdJob, SystemdUnitStatus, SystemdUnitSummary},
 };
 
 const SYSTEMD_BUS_NAME: &str = "org.freedesktop.systemd1";
@@ -66,6 +66,44 @@ impl SystemdDbusClient {
         };
 
         Ok(SystemdResponse::new(data, self.backend_used()))
+    }
+
+    /// Return whether a unit is currently active.
+    pub fn is_active(&self, unit: &str) -> Result<SystemdResponse<bool>> {
+        let status = self.status(unit)?;
+        Ok(SystemdResponse::new(
+            status.data.active_state.as_deref() == Some("active"),
+            self.backend_used(),
+        ))
+    }
+
+    /// Return whether a unit file is enabled.
+    pub fn is_enabled(&self, unit: &str) -> Result<SystemdResponse<bool>> {
+        let path = self.load_unit_path(unit)?;
+        let enabled = matches!(
+            self.unit_property(&path, "UnitFileState")?.as_deref(),
+            Some("enabled" | "enabled-runtime")
+        );
+
+        Ok(SystemdResponse::new(enabled, self.backend_used()))
+    }
+
+    /// Return whether a unit is currently failed.
+    pub fn is_failed(&self, unit: &str) -> Result<SystemdResponse<bool>> {
+        let status = self.status(unit)?;
+        Ok(SystemdResponse::new(
+            status.data.active_state.as_deref() == Some("failed"),
+            self.backend_used(),
+        ))
+    }
+
+    /// List loaded units through `org.freedesktop.systemd1.Manager.ListUnits`.
+    pub fn list_units(&self) -> Result<SystemdResponse<Vec<SystemdUnitSummary>>> {
+        let output = self.manager_call(["ListUnits"])?;
+        Ok(SystemdResponse::new(
+            parse_list_units(&output)?,
+            self.backend_used(),
+        ))
     }
 
     fn call_unit_job(&self, method: &str, unit: &str) -> Result<SystemdResponse<SystemdJob>> {
@@ -184,6 +222,62 @@ fn parse_busctl_string_property(output: &str) -> Option<String> {
         .filter(|value| !value.is_empty())
 }
 
+fn parse_list_units(output: &str) -> Result<Vec<SystemdUnitSummary>> {
+    let strings = quoted_strings(output);
+    if strings.is_empty() {
+        return Ok(Vec::new());
+    }
+    if !strings.len().is_multiple_of(7) {
+        return Err(VeltrixError::parsing(format!(
+            "unexpected systemd ListUnits D-Bus output: {} quoted fields",
+            strings.len()
+        )));
+    }
+
+    Ok(strings
+        .chunks(7)
+        .map(|chunk| SystemdUnitSummary {
+            unit: chunk[0].clone(),
+            description: optional_string(&chunk[1]),
+            load_state: optional_string(&chunk[2]),
+            active_state: optional_string(&chunk[3]),
+            sub_state: optional_string(&chunk[4]),
+        })
+        .collect())
+}
+
+fn quoted_strings(output: &str) -> Vec<String> {
+    let mut strings = Vec::new();
+    let mut current = String::new();
+    let mut in_string = false;
+    let mut escaped = false;
+
+    for ch in output.chars() {
+        if escaped {
+            current.push(ch);
+            escaped = false;
+            continue;
+        }
+
+        match ch {
+            '\\' if in_string => escaped = true,
+            '"' if in_string => {
+                strings.push(std::mem::take(&mut current));
+                in_string = false;
+            }
+            '"' => in_string = true,
+            _ if in_string => current.push(ch),
+            _ => {}
+        }
+    }
+
+    strings
+}
+
+fn optional_string(value: &str) -> Option<String> {
+    (!value.is_empty()).then(|| value.to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -207,5 +301,20 @@ mod tests {
             Some("active")
         );
         assert_eq!(parse_busctl_string_property(r#"s """#), None);
+    }
+
+    #[test]
+    fn parses_list_units_output() {
+        let units = parse_list_units(
+            r#"a(ssssssouso) 1 "demo.service" "Demo Service" "loaded" "active" "running" "" /org/freedesktop/systemd1/unit/demo_2eservice 0 "" /"#,
+        )
+        .unwrap();
+
+        assert_eq!(units.len(), 1);
+        assert_eq!(units[0].unit, "demo.service");
+        assert_eq!(units[0].description.as_deref(), Some("Demo Service"));
+        assert_eq!(units[0].load_state.as_deref(), Some("loaded"));
+        assert_eq!(units[0].active_state.as_deref(), Some("active"));
+        assert_eq!(units[0].sub_state.as_deref(), Some("running"));
     }
 }
