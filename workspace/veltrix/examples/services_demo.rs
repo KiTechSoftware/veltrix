@@ -115,7 +115,8 @@ fn systemd_dbus_example() {
 #[cfg(feature = "technitium")]
 fn technitium_example() -> Result<()> {
     use veltrix::services::technitium::{
-        TechnitiumAuth, TechnitiumClient, TechnitiumHttpSpec, TechnitiumRecordType,
+        TechnitiumAuth, TechnitiumClient, TechnitiumDnsRecord, TechnitiumHttpSpec,
+        TechnitiumRecordType, acme_challenge_name, caddy_acme_challenge_name,
     };
 
     let spec = TechnitiumHttpSpec::new("http://localhost:5380")
@@ -123,10 +124,14 @@ fn technitium_example() -> Result<()> {
     let client = TechnitiumClient::new(spec)?;
 
     println!("technitium client spec: {:?}", client.spec());
+    let challenge_name = acme_challenge_name("app.local");
+    let caddy_challenge_name = caddy_acme_challenge_name("app.local");
+    let challenge_record = TechnitiumDnsRecord::txt(&challenge_name, "dns-01-token").ttl(60);
+
     println!("record type: {}", TechnitiumRecordType::A);
-    println!(
-        "Caddy ACME helper: set _acme-challenge.app.local TXT before requesting a certificate"
-    );
+    println!("Caddy ACME challenge record: {:?}", challenge_record);
+    println!("Caddy challenge name: {}", caddy_challenge_name);
+    println!("ACME helper methods: set_acme_challenge / remove_acme_challenge");
 
     Ok(())
 }

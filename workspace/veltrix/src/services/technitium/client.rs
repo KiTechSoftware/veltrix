@@ -172,8 +172,8 @@ impl TechnitiumClient {
             .await
     }
 
-    /// Set the `_acme-challenge` TXT record Caddy needs for DNS-01 certificate issuance.
-    pub async fn set_caddy_acme_challenge(
+    /// Set the `_acme-challenge` TXT record used for ACME DNS-01 certificate issuance.
+    pub async fn set_acme_challenge(
         &self,
         zone: &str,
         domain: &str,
@@ -184,8 +184,8 @@ impl TechnitiumClient {
         self.set_txt_record(zone, &name, token, ttl).await
     }
 
-    /// Remove the `_acme-challenge` TXT record after Caddy certificate issuance.
-    pub async fn remove_caddy_acme_challenge(
+    /// Remove the `_acme-challenge` TXT record after ACME DNS-01 certificate issuance.
+    pub async fn remove_acme_challenge(
         &self,
         zone: &str,
         domain: &str,
@@ -407,13 +407,19 @@ fn technitium_url(base_url: &str, path: &str) -> Result<reqwest::Url> {
     })
 }
 
-fn acme_challenge_name(domain: &str) -> String {
+/// Build the `_acme-challenge` TXT record name used for ACME DNS-01 validation.
+pub fn acme_challenge_name(domain: &str) -> String {
     let domain = domain.trim().trim_end_matches('.');
     if domain.starts_with("_acme-challenge.") {
         domain.to_string()
     } else {
         format!("_acme-challenge.{domain}")
     }
+}
+
+/// Build the `_acme-challenge` TXT record name Caddy uses for DNS-01 validation.
+pub fn caddy_acme_challenge_name(domain: &str) -> String {
+    acme_challenge_name(domain)
 }
 
 fn parse_response_body<T>(body: &[u8]) -> Result<T>
@@ -490,7 +496,7 @@ mod tests {
     }
 
     #[test]
-    fn builds_caddy_acme_challenge_names() {
+    fn builds_acme_challenge_names() {
         assert_eq!(
             acme_challenge_name("app.example.test."),
             "_acme-challenge.app.example.test"
@@ -498,6 +504,10 @@ mod tests {
         assert_eq!(
             acme_challenge_name("_acme-challenge.app.example.test"),
             "_acme-challenge.app.example.test"
+        );
+        assert_eq!(
+            caddy_acme_challenge_name("app.example.test"),
+            acme_challenge_name("app.example.test")
         );
     }
 
