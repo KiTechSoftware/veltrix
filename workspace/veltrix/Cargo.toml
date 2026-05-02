@@ -26,18 +26,20 @@ docker-full = ["docker", "docker-socket"]
 
 caddy = ["async", "serde", "serde_json", "reqwest/json", "tokio/net", "tokio/io-util"]
 
-systemd = []
+systemd = ["serde", "serde_json"]
+systemd-dbus = ["systemd"]
 technitium = ["async", "serde", "serde_json", "reqwest/json"]
 
 data = []
 data-bools = ["data"]
 data-time = ["data"]
+data-full = ["data-bools", "data-time"]
+
 unistd = ["libc"]
 unicode = []
-unicode-emojis = []
-emojis = ["unicode-emojis"]
+unicode-emojis = ["unicode"]
 
-full = ["podman-full", "docker-full", "caddy", "systemd", "technitium", "data-bools", "data-time", "unistd", "unicode", "unicode-emojis"]
+full = ["podman-full", "docker-full", "caddy", "systemd-dbus", "technitium", "data-full", "unistd", "unicode-emojis"]
 
 [dependencies]
 thiserror = "2"
