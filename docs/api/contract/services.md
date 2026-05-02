@@ -218,6 +218,7 @@ v1 guide coverage:
 
 ```rust
 run_container
+run_container_with_labels
 build_image
 exec_container
 list_containers
@@ -234,6 +235,9 @@ generate_kube
 play_kube
 play_kube_down
 generate_systemd
+quadlet_unit
+quadlet_label
+quadlet_auto_update_label
 machine_init
 machine_start
 machine_ssh
@@ -419,7 +423,15 @@ Veltrix targets:
 
 Technitium DNS Server exposes an HTTP API used by its web console, allowing third-party apps and scripts to configure the DNS server. ([technitium.com][4])
 
-Veltrix should explicitly pin the supported Technitium API/server version before exposing stable response structs.
+Veltrix v0.3.0 pins preview Technitium support to the Technitium DNS Server `13.x` HTTP API family. Stable v1 support must re-verify this pin against the upstream release used for typed endpoint coverage.
+
+Authentication model:
+
+- `TechnitiumAuth::SessionToken` models the token returned by login/session workflows.
+- `TechnitiumAuth::BearerToken` models callers that already have an API token and want an `Authorization: Bearer <token>` request.
+- `TechnitiumAuth::None` is allowed only for unauthenticated endpoints or client setup before login.
+- Token-bearing auth variants must redact tokens from `Debug` output.
+- Service implementations must never log raw credentials, session tokens, bearer tokens, or full auth headers by default.
 
 v1 guide coverage:
 
@@ -485,7 +497,7 @@ Relevant upstream API:
 
 ## Cross-tool integration coverage
 
-Veltrix Services v1 should include documented helpers or examples for the guide's combined workflows.
+Veltrix Services v2 should include documented helpers or examples for the guide's combined workflows. v1 focuses on service-specific clients and the minimal DNS primitives needed for Caddy certificate issuance.
 
 Target patterns:
 
@@ -561,11 +573,11 @@ Current focus:
 
 Current supported services:
 
-- Docker: not yet supported
-- Podman: partial
-- Caddy: partial
-- systemd: not yet supported
-- Technitium: not yet supported
+- Docker: v1 guide workflows implemented through CLI, Compose, and Unix socket backends
+- Podman: v1 guide workflows implemented through CLI and Unix socket backends
+- Caddy: v1 guide workflows implemented through CLI and Admin API helpers
+- systemd: v0.6 CLI-backed lifecycle, inspection, journal, unit-file, timer, override, template, resource-limit, watchdog, and deployment workflows
+- Technitium: v0.6 async HTTP client for auth, zones, records, settings, resolving, logs, stats, blocking, import, and bulk-record workflows
 
 Required cleanup before moving forward:
 
@@ -753,7 +765,7 @@ Response model:
 - lifecycle operations return `SystemdEmptyResponse` or typed job responses if using D-Bus jobs
 - journal operations return typed log entries when using JSON output
 
-### v0.7.0 — Technitium preview
+### v0.6.0 — Technitium preview
 
 Primary goal: introduce Technitium DNS Server support.
 
@@ -779,6 +791,19 @@ query_logs
 dashboard_stats
 ```
 
+### v0.7.0 — systemd D-Bus and structured journals
+
+Primary goal: make D-Bus the preferred manager backend where available and expose structured journal entries where `journalctl -o json` is available.
+
+Implemented work:
+
+- add `systemd-dbus` feature
+- add `SystemdDbusClient` backed by `busctl`
+- model D-Bus lifecycle calls as `SystemdResponse<SystemdJob>`
+- add `SystemdBackendUsed::Dbus`
+- add `SystemdJournalEntry`
+- add structured journal methods such as `journal_entries`, `tail_journal_entries`, `journal_entries_since`, `journal_entries_boot`, and `journal_entries_priority`
+
 ### v0.8.0 — Technitium DNS management
 
 Primary goal: add typed DNS mutation operations.
@@ -798,6 +823,10 @@ get_settings
 set_settings
 add_blocked_domain
 add_allowed_domain
+set_txt_record
+remove_txt_record
+set_caddy_acme_challenge
+remove_caddy_acme_challenge
 ```
 
 Supported DNS record types should be explicit and typed.
@@ -816,9 +845,9 @@ CAA
 PTR
 ```
 
-### v0.9.0 — Cross-tool workflow coverage
+### v2.0.0 — Cross-tool workflow coverage
 
-Primary goal: document and test the guide's combined infrastructure workflows.
+Primary goal: document and test the guide's combined infrastructure workflows after the service-specific v1 APIs are stable.
 
 Planned work:
 
@@ -888,8 +917,8 @@ Expected service state:
 - Podman: full v1 guide coverage
 - Caddy: full v1 guide coverage
 - systemd: full v1 guide coverage
-- Technitium: full v1 guide coverage
-- Cross-tool workflows: documented and example-backed
+- Technitium: DNS record/zone coverage needed by Caddy certificate workflows plus core DNS management
+- Cross-tool workflows: deferred to v2 examples and helpers
 
 ### v1.0.0 — Stable services API
 

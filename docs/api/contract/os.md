@@ -161,30 +161,30 @@ veltrix::os::unistd::is_effective_root
 
 ### clock
 
-Status: **planned**
+Status: **v0.6.0 preview**
 
-Canonical path when introduced:
+Canonical path:
 
 ```rust
 veltrix::os::clock
 ```
 
-The `clock` module should contain operating-system or runtime clock helpers. It should be used for APIs that ask the OS, process runtime, or platform clock source for time-related state.
+The `clock` module contains operating-system or runtime clock helpers. It should be used for APIs that ask the OS, process runtime, or platform clock source for time-related state.
 
-Planned support may include:
+Current support includes:
 
 - current system time
 - monotonic time
 - process CPU time
 - thread CPU time
 - system uptime
-- platform clock-source metadata where practical
 
 Representative future API surface:
 
 ```rust
 veltrix::os::clock::now
 veltrix::os::clock::monotonic
+veltrix::os::clock::unix_timestamp
 veltrix::os::clock::process_cpu_time
 veltrix::os::clock::thread_cpu_time
 veltrix::os::clock::uptime
@@ -206,7 +206,7 @@ veltrix::data::time::parse_duration("5m") // not os::clock
 veltrix::data::time::format_timestamp(ts) // not os::clock
 ```
 
-`os::clock` is not required for v0.2.0. It should remain planned until there is a concrete implementation.
+`process_cpu_time`, `thread_cpu_time`, and `uptime` are backed by Linux clock sources in v0.6.0. Unsupported platforms return explicit `VeltrixError::Validation` errors until a platform implementation is added.
 
 ## Feature layout
 
@@ -339,7 +339,7 @@ Planned work:
 
 - explicitly mark Unix-only APIs
 - avoid exposing Unix-specific helpers on unsupported targets
-- consider introducing planned OS clock helpers:
+- introduce OS clock helpers:
 
 ```rust
 veltrix::os::clock
@@ -377,6 +377,7 @@ Expected public modules:
 veltrix::os::paths
 veltrix::os::process
 veltrix::os::unistd
+veltrix::os::clock
 ```
 
 v1 does not require every OS primitive to be wrapped. It means every exposed OS helper is stable, documented, and intentionally located under the `os` domain.

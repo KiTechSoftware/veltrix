@@ -1,6 +1,6 @@
 # Veltrix Data Contract
 
-`veltrix::data` is the planned domain for small value-level utilities: parsing, formatting, normalization, validation, and conversion helpers for primitive or commonly reused data shapes.
+`veltrix::data` is the domain for small value-level utilities: parsing, formatting, normalization, validation, and conversion helpers for primitive or commonly reused data shapes.
 
 The `data` domain should not own operating-system runtime behavior, service integrations, or Unicode tables. It should transform values that are already in memory.
 
@@ -8,7 +8,7 @@ The `data` domain should not own operating-system runtime behavior, service inte
 
 Veltrix data helpers are pinned to Veltrix crate versions.
 
-The `data` module is **planned**, not active in v0.2.0. It should not be exposed as a production API until a concrete module is ready.
+The `data` module is active as a v0.6.0 preview behind namespaced feature flags. It should not expose a child module unless a concrete implementation is ready.
 
 ### Compatibility rule
 
@@ -49,7 +49,7 @@ os::*   = ask the operating system/runtime for state or perform OS actions
 
 ### bools
 
-Status: **planned**
+Status: **v0.6.0 preview**
 
 Canonical path when introduced:
 
@@ -67,14 +67,14 @@ Planned support:
 - validate boolean-like configuration values
 - expose strict and permissive parsing modes
 
-Representative future API surface:
+Representative API surface:
 
 ```rust
 veltrix::data::bools::parse_bool
 veltrix::data::bools::parse_truthy_falsy
-veltrix::data::bools::format_bool
+veltrix::data::bools::true_false
+veltrix::data::bools::yes_no
 veltrix::data::bools::BoolParseMode
-veltrix::data::bools::BoolParseError
 ```
 
 Design guidance:
@@ -86,7 +86,7 @@ Design guidance:
 
 ### time
 
-Status: **planned**
+Status: **v0.6.0 preview**
 
 Canonical path when introduced:
 
@@ -96,25 +96,33 @@ veltrix::data::time
 
 The `time` module should contain value-level time parsing and formatting helpers. It should not read system time, monotonic time, process CPU time, or uptime.
 
-Planned support:
+Current v0.6+/v0.7 support:
 
 - parse duration strings
 - format durations
-- parse timestamp strings
-- format timestamp values
-- validate time strings used in configuration
-- optionally expose stable wrappers for supported format families
+- expose whole-second conversion helpers
 
-Representative future API surface:
+Representative API surface:
 
 ```rust
 veltrix::data::time::parse_duration
 veltrix::data::time::format_duration
+veltrix::data::time::seconds
+```
+
+Deferred v1+ candidates:
+
+```rust
 veltrix::data::time::parse_timestamp
 veltrix::data::time::format_timestamp
 veltrix::data::time::DurationFormat
 veltrix::data::time::TimestampFormat
 ```
+
+Do not add timestamp parsing/formatting or format enums until the contract
+chooses supported timestamp families, timezone behavior, backing types, and
+strictness rules. `DurationFormat` should also wait until Veltrix supports at
+least two duration output formats.
 
 Boundary examples:
 
@@ -209,7 +217,7 @@ Planned work:
 
 Primary goal: introduce `veltrix::data` if there is enough implemented surface area.
 
-Planned modules:
+Implemented modules:
 
 ```rust
 veltrix::data::bools
@@ -235,6 +243,12 @@ veltrix::data::time
 ```
 
 v1 does not require every primitive type to have helpers. It means every exposed data helper is stable, documented, and intentionally located under the `data` domain.
+
+Potential v1+ expansion:
+
+- timestamp parsing and formatting once RFC3339/Unix/systemd-style scope is chosen
+- `DurationFormat` once more than one duration representation is supported
+- `TimestampFormat` once timestamp support exists and has more than one stable format
 
 ## Breaking-change policy
 
