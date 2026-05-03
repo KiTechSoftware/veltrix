@@ -289,6 +289,22 @@ pub fn home_dir() -> Option<PathBuf> {
     }
 }
 
+/// Returns `true` if a process identified by [`Pid`] is alive.
+///
+/// This sends signal 0 via `kill(2)`, which performs permission checking but
+/// does not deliver a signal. A return of `true` means the process exists;
+/// `EPERM` also means it exists but is owned by another user.
+///
+/// Returns `false` for `ESRCH` (no such process) or any other error.
+pub fn pid_is_alive(pid: Pid) -> bool {
+    let result = unsafe { libc::kill(pid.0, 0) };
+    if result == 0 {
+        return true;
+    }
+    // EPERM: process exists but we lack permission to signal it – still alive
+    (unsafe { libc::__errno_location().read() }) == libc::EPERM
+}
+
 /// Returns `true` if the current real UID is root.
 pub fn is_root() -> bool {
     getuid().is_root()
