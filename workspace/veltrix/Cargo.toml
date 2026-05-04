@@ -30,6 +30,10 @@ systemd = ["serde", "serde_json"]
 systemd-dbus = ["systemd"]
 technitium = ["async", "serde", "serde_json", "reqwest/json"]
 
+ldap = ["serde", "serde_json", "ldap3"]
+ldap-sasl = ["ldap", "ldap3"]
+ldap-gssapi = ["ldap-sasl", "ldap3/gssapi"]
+
 data = []
 data-bools = ["data"]
 data-time = ["data"]
@@ -39,7 +43,7 @@ unistd = ["libc"]
 unicode = []
 unicode-emojis = ["unicode"]
 
-full = ["podman-full", "docker-full", "caddy", "systemd-dbus", "technitium", "data-full", "unistd", "unicode-emojis"]
+full = ["podman-full", "docker-full", "caddy", "systemd-dbus", "technitium", "ldap-gssapi", "data-full", "unistd", "unicode-emojis"]
 
 [dependencies]
 thiserror = "2"
@@ -51,3 +55,5 @@ serde_json = { version = "1", optional = true }
 tokio = { version = "1", optional = true, features = [] }
 
 reqwest = { version = "0.12", optional = true, default-features = true, features = [] }
+
+ldap3 = { version = "0.11", optional = true }

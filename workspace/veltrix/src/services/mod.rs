@@ -17,3 +17,6 @@ pub mod systemd;
 
 #[cfg(feature = "technitium")]
 pub mod technitium;
+
+#[cfg(feature = "ldap")]
+pub mod ldap;
