@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.7.1
+
+- Added `pid_is_alive` helper using `kill(2)` signal 0
+- Added v0.8.0 preview `LDAP` support behind the `ldap` feature flag with `LdapClient` and typed API contracts for auth, search, and modify operations.
+
 ## v0.7.0
 
 - Removed the legacy top-level `veltrix::emojis` module and `emojis` feature.
