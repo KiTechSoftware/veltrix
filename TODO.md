@@ -74,7 +74,6 @@ Extend `VeltrixError` to cover services domain:
 - [x] Audit `services::caddy` — ensure skeleton-only, no premature v0.5.0 impl
 - [x] Run `just lint` — resolve all clippy warnings
 - [x] Run `just test` — all tests passing
-- [ ] Make scoped commits per API group
 
 **Deliverables:** Podman v1 complete, Docker skeleton + features added, Technitium auth pinned, no regressions.
 
@@ -147,17 +146,10 @@ Extend `VeltrixError` to cover services domain:
   - [x] Module management
 - [x] Test all implemented workflows
 
-### Integration Testing
-
-- [ ] Docker + Podman comparison tests
-- [ ] Caddy config validation workflows
-- [ ] Cross-tool error handling
-
 ### Validation
 
 - [x] `just lint` passes
 - [x] `just test` passes
-- [ ] All workflows from guide tested
 
 **Deliverables:** Docker v1 and Caddy v1 APIs complete, fully tested, ready for integration.
 
@@ -233,13 +225,6 @@ Extend `VeltrixError` to cover services domain:
 - [x] Document Technitium ACME certificate flow
 - [x] Add example using Technitium to set/remove ACME records
 
-### Deferred to v2
-
-- [ ] Docker/Podman + Caddy automatic reverse proxy
-- [ ] Containers + systemd full-stack orchestration
-- [ ] systemd timers + containerized jobs
-- [ ] Full-stack local development environment
-
 ### Validation
 
 - [x] `just lint` passes
@@ -249,7 +234,204 @@ Extend `VeltrixError` to cover services domain:
 
 ---
 
-## v0.8.0: API Review & Documentation
+## v0.8.0: LDAP Services
+
+### LDAP Module Foundation
+
+- [ ] Create `veltrix::services::ldap` module with submodules:
+  - [ ] `spec` — `LdapSpec`, `LdapAuthMethod`, `LdapBackendUsed`, `LdapResponse<T>`, `LdapEmptyResponse`
+  - [ ] `client` — `LdapClient` (sync; optional async behind `async` feature)
+  - [ ] `types` — `LdapEntry`, `LdapAttribute`, `SearchOptions`, `SearchScope`, `ModifyOp`
+  - [ ] `error` — Credential-safe error handling per AGENTS.md patterns
+- [ ] Add feature flags:
+  - [ ] `ldap` (required, enables module)
+  - [ ] `ldap-sasl` (optional, for SASL mechanisms)
+  - [ ] `ldap-gssapi` (optional, for Kerberos; implies `ldap-sasl`)
+  - [ ] Include `ldap` in `full` feature flag
+- [ ] Implement `LdapSpec` configuration:
+  - [ ] URI parsing (ldap://, ldaps://, ldapi://)
+  - [ ] Authentication method enum (Simple, SaslPlain, SaslExternal, Anonymous)
+  - [ ] TLS mode (None, StartTLS, LDAPS)
+  - [ ] Certificate verification and CA bundle support
+  - [ ] Connect and operation timeouts
+  - [ ] Paged result page size configuration
+- [ ] Add server type detection:
+  - [ ] OpenLDAP identification
+  - [ ] 389 Directory Server identification
+  - [ ] Active Directory identification
+  - [ ] Unknown/generic fallback
+- [ ] Implement credential-safe error handling:
+  - [ ] Use `VeltrixError::Auth` for bind failures
+  - [ ] Use `VeltrixError::Parsing` for response parsing
+  - [ ] Use `VeltrixError::Service` for protocol-level errors
+  - [ ] Use `VeltrixError::Socket` for connection failures
+  - [ ] Never log passwords, full DNs, or authorization headers
+
+### LDAP Connection & Authentication Workflows
+
+- [ ] Implement `bind()` — bind with configured credentials
+- [ ] Implement `bind_as(user_dn, password)` — verify user credentials (for auth flows)
+- [ ] Implement read-verify-bind pattern helper (service bind + user verification)
+- [ ] Support all authentication methods:
+  - [ ] Simple bind (plaintext, TLS only)
+  - [ ] SASL/PLAIN (behind `ldap-sasl` feature)
+  - [ ] SASL/EXTERNAL (TLS client certificate)
+  - [ ] Anonymous bind with explicit warning
+- [ ] Test connections against:
+  - [ ] OpenLDAP (osixia/openldap container or system slapd)
+  - [ ] 389 Directory Server (if available in CI/test environment)
+  - [ ] Active Directory (simulation via OpenLDAP AD-compatible config or docs)
+
+### LDAP Search & Query Workflows
+
+- [ ] Implement `search(base_dn, filter, scope, attributes, limits)` — RFC 4515 filter syntax
+- [ ] Implement `search_paged()` — handle large result sets with cursor
+- [ ] Implement `get_entry(dn)` — fetch a specific entry by DN
+- [ ] Add search scope support:
+  - [ ] Base (DN entry only)
+  - [ ] OneLevel (immediate children)
+  - [ ] Subtree (base and all descendants)
+- [ ] Add search result controls:
+  - [ ] Size and time limits
+  - [ ] Paged results for large directories
+  - [ ] Types-only option (attribute names without values)
+- [ ] Implement user helper methods:
+  - [ ] `find_user_by_uid(uid)` — lookup user by uid attribute
+  - [ ] `find_user_by_mail(mail)` — lookup user by mail attribute
+  - [ ] `find_users_in_group(group_dn)` — list group members
+- [ ] Implement group helper methods:
+  - [ ] `find_group_by_cn(cn)` — lookup group by common name
+  - [ ] `find_groups_for_user(user_dn)` — list user's group memberships
+  - [ ] `get_group_members(group_dn)` — get member DNs from group entry
+- [ ] Support POSIX user/group lookups:
+  - [ ] `find_posix_user_by_uid_number(uid_number)` — POSIX uid lookup
+  - [ ] `find_posix_group_by_gid_number(gid_number)` — POSIX gid lookup
+
+### LDAP Entry Mutation Workflows
+
+- [ ] Implement `add_entry(dn, attributes)` — create new directory entry
+- [ ] Implement `modify_entry(dn, changes)` — apply add/replace/delete operations to attributes
+- [ ] Implement `delete_entry(dn)` — remove entry (non-recursive)
+- [ ] Implement `rename_entry(old_dn, new_rdn, new_superior)` — rename/move entry
+- [ ] Add `ModifyOp` enum:
+  - [ ] Add (append values to attribute)
+  - [ ] Replace (overwrite attribute values)
+  - [ ] Delete (remove attribute or specific values)
+- [ ] Test mutation workflows:
+  - [ ] Bulk user provisioning (CSV → LDIF-style add operations)
+  - [ ] Entry modifications (attribute updates)
+  - [ ] Safe deletion with verification
+
+### LDAP Password & Account Workflows
+
+- [ ] Implement `change_password(user_dn, old_password, new_password)` — user self-service
+- [ ] Implement `set_password(user_dn, new_password)` — admin password reset
+- [ ] Support password hashing formats:
+  - [ ] {SSHA} (Salted SHA, OpenLDAP default)
+  - [ ] {PBKDF2} (PBKDF2, if server supports)
+  - [ ] {ARGON2} (Argon2, if server has module; optional)
+- [ ] Implement account state predicates (if supported by server):
+  - [ ] Account locked detection
+  - [ ] Password expiration detection
+  - [ ] Account enabled/disabled detection
+- [ ] Test password workflows:
+  - [ ] User password change
+  - [ ] Admin password reset
+  - [ ] Expired password handling
+
+### LDAP Response Types & Models
+
+- [ ] Implement `LdapEntry` struct:
+  - [ ] DN (Distinguished Name)
+  - [ ] Attributes (HashMap<String, LdapAttribute>)
+  - [ ] Helper methods: `get_string()`, `get_strings()`, `get_bytes()`, `get_all_bytes()`
+  - [ ] Proper UTF-8 decoding with fallback for binary data
+- [ ] Implement `LdapAttribute` struct:
+  - [ ] Name
+  - [ ] Values (binary-safe Vec<Vec<u8>>)
+  - [ ] Multi-valued support
+- [ ] Implement `SearchOptions` builder for complex searches
+- [ ] Implement response metadata:
+  - [ ] Connection time
+  - [ ] Server type (for backend-specific behavior)
+  - [ ] TLS mode used
+  - [ ] Authentication method used
+
+### LDAP Documentation & Examples
+
+- [ ] Create `docs/api/contract/services-ldap.md` (complete reference)
+  - [ ] Module structure and API surface
+  - [ ] Configuration patterns (TLS, auth, timeouts)
+  - [ ] Response model and metadata
+  - [ ] Supported workflows and example signatures
+  - [ ] Error handling and security rules
+  - [ ] Feature flags and stability guarantees
+- [ ] Update `README.md`:
+  - [ ] Add LDAP to supported services table
+  - [ ] Document `ldap` feature flag and sub-flags
+  - [ ] Reference `docs/api/contract/services-ldap.md`
+- [ ] Add example: `examples/ldap_demo.rs`
+  - [ ] Demonstrate bind and search workflows
+  - [ ] Show user lookup pattern (uid, mail, group membership)
+  - [ ] Show group membership lookup
+  - [ ] Show read-verify-bind authentication pattern
+  - [ ] Demonstrate error handling (connection, auth, parsing)
+  - [ ] Include TLS/certificate validation example
+  - [ ] Show bulk user provisioning pattern
+- [ ] Update `AGENTS.md`:
+  - [ ] Add LDAP to supported services list
+  - [ ] Document error handling patterns for LDAP (Auth, Service, Socket, Parsing, Validation)
+  - [ ] Reference `services-ldap.md` contract
+  - [ ] Credential safety rules specific to LDAP
+- [ ] Document security best practices in examples:
+  - [ ] Always use TLS in production
+  - [ ] Never log credentials or full DNs
+  - [ ] Use service account pattern for app authentication
+  - [ ] Read-verify-bind for user authentication
+  - [ ] Connection pooling recommendations
+
+### LDAP Testing & Validation
+
+- [ ] Create unit tests for:
+  - [ ] DN parsing and normalization
+  - [ ] RFC 4515 filter syntax validation
+  - [ ] Attribute value encoding/decoding
+  - [ ] Error handling (each error variant)
+  - [ ] Response metadata generation
+- [ ] Create integration tests against OpenLDAP container:
+  - [ ] Connection and bind (simple, anonymous, TLS)
+  - [ ] Search (base, onelevel, subtree scopes)
+  - [ ] Paged results for large result sets
+  - [ ] User lookup helpers
+  - [ ] Group lookup helpers
+  - [ ] Entry add, modify, delete, rename
+  - [ ] Password change (user and admin)
+  - [ ] Error scenarios (invalid DN, insufficient access, etc.)
+  - [ ] POSIX user/group lookups
+- [ ] Run tests with:
+  - [ ] StartTLS
+  - [ ] LDAPS
+  - [ ] Plain (development only)
+- [ ] Verify security patterns:
+  - [ ] Credentials not logged in any error or warning messages
+  - [ ] No sensitive data in error messages
+  - [ ] Proper TLS verification enforcement
+  - [ ] Connection pooling (if implemented)
+
+### Validation Checklist
+
+- [ ] `cargo check --manifest-path workspace/Cargo.toml -p veltrix --features ldap`
+- [ ] `cargo check --manifest-path workspace/Cargo.toml -p veltrix --features ldap,ldap-sasl`
+- [ ] `cargo check --manifest-path workspace/Cargo.toml -p veltrix --examples --all-features`
+- [ ] `just lint` passes (no clippy warnings in LDAP code)
+- [ ] `just test` passes (all LDAP tests pass)
+- [ ] `just check-license` passes
+
+**Deliverables:** LDAP service module foundation, typed bind/search/mutate workflows, user/group helpers, comprehensive documentation, integration tests, and security-by-default patterns per AGENTS.md and Developer Tool Usage Guide.
+
+---
+
+## v0.9.0: API Review & Documentation
 
 ### Public API Audit
 
@@ -286,7 +468,7 @@ Extend `VeltrixError` to cover services domain:
 
 ---
 
-## v0.9.0: Stability Freeze & Integration Tests
+## v0.10.0: Stability Freeze & Integration Tests
 
 ### Stability Freeze
 
@@ -328,7 +510,20 @@ Extend `VeltrixError` to cover services domain:
 
 ---
 
-## v0.10.0: Cross-Tool Integration Patterns
+## v0.11.0: Deferred Integrations & Cross-Tool Patterns
+
+- [ ] Docker/Podman + Caddy automatic reverse proxy
+- [ ] Containers + systemd full-stack orchestration
+- [ ] systemd timers + containerized jobs
+- [ ] Full-stack local development environment
+
+### Integration Testing
+
+- [ ] Docker + Podman comparison tests
+- [ ] Caddy config validation workflows
+- [ ] Cross-tool error handling
+
+## v0.12.0: Cross-Tool Integration Patterns
 
 ### Integration Workflows
 
