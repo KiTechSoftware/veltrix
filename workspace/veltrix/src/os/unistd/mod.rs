@@ -5,6 +5,7 @@ use std::fmt;
 use std::fs::File;
 use std::io::{self, BufRead, BufReader};
 use std::path::{Path, PathBuf};
+use std::os::unix::io::AsRawFd;
 
 /// Common Unix group names that often grant administrative privileges.
 ///
@@ -500,6 +501,274 @@ pub fn has_common_admin_group() -> bool {
     }
 
     false
+}
+
+/// Change ownership of a filesystem object at `path`.
+///
+/// `uid` and `gid` are optional; pass `None` to leave the corresponding
+/// value unchanged (this maps to `(uid_t)-1` / `(gid_t)-1` for the libc call).
+///
+/// This is a thin, safe wrapper around `libc::chown` that returns an
+/// `io::Result<()>` carrying the last OS error on failure.
+pub fn chown(path: impl AsRef<Path>, uid: Option<Uid>, gid: Option<Gid>) -> io::Result<()> {
+    use std::os::unix::ffi::OsStrExt;
+
+    let path = path.as_ref();
+    let bytes = path.as_os_str().as_bytes();
+    let c_path = CString::new(bytes).map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "path contains interior NUL"))?;
+
+    // libc expects (uid_t)-1 / (gid_t)-1 to indicate "do not change".
+    let uid_raw: libc::uid_t = uid.map(|u| u.0).unwrap_or(!0 as libc::uid_t);
+    let gid_raw: libc::gid_t = gid.map(|g| g.0).unwrap_or(!0 as libc::gid_t);
+
+    let ret = unsafe { libc::chown(c_path.as_ptr(), uid_raw, gid_raw) };
+
+    if ret == 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
+    }
+}
+
+/// Change ownership by file descriptor.
+///
+/// `file` is any object implementing `AsRawFd` (e.g., `&File`). `uid` and
+/// `gid` are optional; pass `None` to leave the corresponding value unchanged.
+pub fn fchown(file: &File, uid: Option<Uid>, gid: Option<Gid>) -> io::Result<()> {
+    let fd = file.as_raw_fd();
+
+    let uid_raw: libc::uid_t = uid.map(|u| u.0).unwrap_or(!0 as libc::uid_t);
+    let gid_raw: libc::gid_t = gid.map(|g| g.0).unwrap_or(!0 as libc::gid_t);
+
+    let ret = unsafe { libc::fchown(fd, uid_raw, gid_raw) };
+
+    if ret == 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
+    }
+}
+
+/// Change ownership of a filesystem object at `path` without following symlinks.
+///
+/// Behaves like `chown` but uses `lchown(2)` to operate on symlinks themselves.
+pub fn lchown(path: impl AsRef<Path>, uid: Option<Uid>, gid: Option<Gid>) -> io::Result<()> {
+    use std::os::unix::ffi::OsStrExt;
+
+    let path = path.as_ref();
+    let bytes = path.as_os_str().as_bytes();
+    let c_path = CString::new(bytes).map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "path contains interior NUL"))?;
+
+    let uid_raw: libc::uid_t = uid.map(|u| u.0).unwrap_or(!0 as libc::uid_t);
+    let gid_raw: libc::gid_t = gid.map(|g| g.0).unwrap_or(!0 as libc::gid_t);
+
+    let ret = unsafe { libc::lchown(c_path.as_ptr(), uid_raw, gid_raw) };
+
+    if ret == 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
+    }
+}
+
+/// Convenience wrapper: resolve `username`/`groupname` and call `chown`.
+///
+/// If a non-`None` `username`/`groupname` cannot be resolved an
+/// `Err(io::ErrorKind::NotFound)` is returned.
+pub fn chown_by_names(
+    path: impl AsRef<Path>,
+    username: Option<&str>,
+    groupname: Option<&str>,
+) -> io::Result<()> {
+    let uid_opt = match username {
+        Some(name) => match uid_by_username(name) {
+            Some(u) => Some(u),
+            None => return Err(io::Error::new(io::ErrorKind::NotFound, format!("user not found: {}", name))),
+        },
+        None => None,
+    };
+
+    let gid_opt = match groupname {
+        Some(name) => match gid_by_groupname(name) {
+            Some(g) => Some(g),
+            None => return Err(io::Error::new(io::ErrorKind::NotFound, format!("group not found: {}", name))),
+        },
+        None => None,
+    };
+
+    chown(path, uid_opt, gid_opt)
+}
+
+/// Convenience wrapper: resolve `username`/`groupname` and call `fchown`.
+pub fn fchown_by_names(
+    file: &File,
+    username: Option<&str>,
+    groupname: Option<&str>,
+) -> io::Result<()> {
+    let uid_opt = match username {
+        Some(name) => match uid_by_username(name) {
+            Some(u) => Some(u),
+            None => return Err(io::Error::new(io::ErrorKind::NotFound, format!("user not found: {}", name))),
+        },
+        None => None,
+    };
+
+    let gid_opt = match groupname {
+        Some(name) => match gid_by_groupname(name) {
+            Some(g) => Some(g),
+            None => return Err(io::Error::new(io::ErrorKind::NotFound, format!("group not found: {}", name))),
+        },
+        None => None,
+    };
+
+    fchown(file, uid_opt, gid_opt)
+}
+
+/// Convenience wrapper: resolve `username`/`groupname` and call `lchown`.
+pub fn lchown_by_names(
+    path: impl AsRef<Path>,
+    username: Option<&str>,
+    groupname: Option<&str>,
+) -> io::Result<()> {
+    let uid_opt = match username {
+        Some(name) => match uid_by_username(name) {
+            Some(u) => Some(u),
+            None => return Err(io::Error::new(io::ErrorKind::NotFound, format!("user not found: {}", name))),
+        },
+        None => None,
+    };
+
+    let gid_opt = match groupname {
+        Some(name) => match gid_by_groupname(name) {
+            Some(g) => Some(g),
+            None => return Err(io::Error::new(io::ErrorKind::NotFound, format!("group not found: {}", name))),
+        },
+        None => None,
+    };
+
+    lchown(path, uid_opt, gid_opt)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs::File;
+
+    #[test]
+    fn chown_noop_for_current_user() {
+        let mut path = std::env::temp_dir();
+        path.push(format!("veltrix_chown_test_{}", std::process::id()));
+
+        let _ = File::create(&path).expect("create temp file");
+
+        // Changing to the current uid/gid should succeed for a file we own.
+        let res = chown(&path, Some(getuid()), Some(getgid()));
+
+        // Clean up before asserting so test doesn't leave artifacts on failure.
+        let _ = std::fs::remove_file(&path);
+
+        assert!(res.is_ok());
+    }
+
+    #[test]
+    fn fchown_noop_for_current_user() {
+        let mut path = std::env::temp_dir();
+        path.push(format!("veltrix_fchown_test_{}", std::process::id()));
+
+        let _ = File::create(&path).expect("create temp file");
+        let f = File::open(&path).expect("open file");
+
+        let res = fchown(&f, Some(getuid()), Some(getgid()));
+
+        let _ = std::fs::remove_file(&path);
+
+        assert!(res.is_ok());
+    }
+
+    #[test]
+    fn lchown_noop_for_current_user() {
+        use std::os::unix::fs::symlink;
+
+        let mut target = std::env::temp_dir();
+        target.push(format!("veltrix_lchown_target_{}", std::process::id()));
+        let _ = File::create(&target).expect("create target");
+
+        let mut link = std::env::temp_dir();
+        link.push(format!("veltrix_lchown_link_{}", std::process::id()));
+
+        // Remove any leftover link, ignore errors
+        let _ = std::fs::remove_file(&link);
+
+        symlink(&target, &link).expect("create symlink");
+
+        let res = lchown(&link, Some(getuid()), Some(getgid()));
+
+        let _ = std::fs::remove_file(&link);
+        let _ = std::fs::remove_file(&target);
+
+        assert!(res.is_ok());
+    }
+
+    #[test]
+    fn chown_by_names_noop_for_current_user() {
+        let mut path = std::env::temp_dir();
+        path.push(format!("veltrix_chown_names_test_{}", std::process::id()));
+
+        let _ = File::create(&path).expect("create temp file");
+
+        let username = username_by_uid(getuid()).expect("username exists");
+        let groupname = groupname_by_gid(getgid()).expect("group exists");
+
+        let res = chown_by_names(&path, Some(&username), Some(&groupname));
+
+        let _ = std::fs::remove_file(&path);
+
+        assert!(res.is_ok());
+    }
+
+    #[test]
+    fn fchown_by_names_noop_for_current_user() {
+        let mut path = std::env::temp_dir();
+        path.push(format!("veltrix_fchown_names_test_{}", std::process::id()));
+
+        let _ = File::create(&path).expect("create temp file");
+        let f = File::open(&path).expect("open file");
+
+        let username = username_by_uid(getuid()).expect("username exists");
+        let groupname = groupname_by_gid(getgid()).expect("group exists");
+
+        let res = fchown_by_names(&f, Some(&username), Some(&groupname));
+
+        let _ = std::fs::remove_file(&path);
+
+        assert!(res.is_ok());
+    }
+
+    #[test]
+    fn lchown_by_names_noop_for_current_user() {
+        use std::os::unix::fs::symlink;
+
+        let mut target = std::env::temp_dir();
+        target.push(format!("veltrix_lchown_names_target_{}", std::process::id()));
+        let _ = File::create(&target).expect("create target");
+
+        let mut link = std::env::temp_dir();
+        link.push(format!("veltrix_lchown_names_link_{}", std::process::id()));
+
+        let _ = std::fs::remove_file(&link);
+
+        symlink(&target, &link).expect("create symlink");
+
+        let username = username_by_uid(getuid()).expect("username exists");
+        let groupname = groupname_by_gid(getgid()).expect("group exists");
+
+        let res = lchown_by_names(&link, Some(&username), Some(&groupname));
+
+        let _ = std::fs::remove_file(&link);
+        let _ = std::fs::remove_file(&target);
+
+        assert!(res.is_ok());
+    }
 }
 
 // TODO: add more functions as needed, create user/group 
