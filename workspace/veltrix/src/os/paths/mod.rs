@@ -15,11 +15,11 @@ use crate::error::{Result, VeltrixError};
 // System-wide paths
 
 pub fn system_bin_path(bin_name: &str) -> PathBuf {
-    PathBuf::from(constants::PATH_SYSTEM_BIN).join(bin_name)
+    PathBuf::from(constants::PATH_SYSTEM_BIN_DIR).join(bin_name)
 }
 
 pub fn system_local_bin_path(bin_name: &str) -> PathBuf {
-    PathBuf::from(constants::PATH_SYSTEM_LOCAL_BIN).join(bin_name)
+    PathBuf::from(constants::PATH_SYSTEM_LOCAL_BIN_DIR).join(bin_name)
 }
 
 pub fn system_config_dir(app_name: &str) -> PathBuf {
