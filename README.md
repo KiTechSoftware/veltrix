@@ -20,13 +20,13 @@ It is designed for projects that want clean utilities without pulling in large f
 
 ```toml
 [dependencies]
-veltrix = "0.7.1"
+veltrix = "0.7.2"
 ```
 
 Optional features:
 
 ```toml
-veltrix = { version = "0.7.1", features = [
+veltrix = { version = "0.7.2", features = [
     "async",
     "podman",
     "docker",

@@ -155,6 +155,9 @@ pub fn user_log_dir(app_name: &str) -> Result<PathBuf> {
 
 /// Resolve the user's local `bin` directory, typically `~/.local/bin`.
 pub fn user_bin_dir() -> Result<PathBuf> {
+    if cfg!(feature = "legacy") {
+        return Ok(home_dir()?.join(".bin"));
+    }
     Ok(home_dir()?.join(".local").join(constants::BIN_DIR_NAME))
 }
 

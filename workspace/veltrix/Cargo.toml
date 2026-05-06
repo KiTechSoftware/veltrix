@@ -13,6 +13,7 @@ categories.workspace = true
 
 [features]
 default = []
+legacy = []
 
 async = ["tokio/process"]
 

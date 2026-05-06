@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.7.2
+
+- Fixed a minor issue with path handling in `veltrix::os::paths`.
+- Updated async and standard command handling to support `current_dir`.
+- Breaking change: Updated `user_bin_dir` to return a `FHS-compliant` path by default, with an optional `legacy` flag for the previous behavior. This may affect existing code that relies on the old path format, so please review the updated API contract and adjust your code accordingly.
+
 ## v0.7.1
 
 - Added `pid_is_alive` helper using `kill(2)` signal 0
