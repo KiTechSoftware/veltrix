@@ -11,6 +11,9 @@ use std::path::{Path, PathBuf};
 /// This list is heuristic and not an authoritative sudo policy check.
 pub const COMMON_ADMIN_GROUPS: &[&str] = &["sudo", "wheel", "admin"];
 
+pub const SUBUID_FILE: &str = "/etc/subuid";
+pub const SUBGID_FILE: &str = "/etc/subgid";
+
 /// A Unix user identifier.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Uid(libc::uid_t);
@@ -22,6 +25,49 @@ pub struct Gid(libc::gid_t);
 /// A Unix process identifier.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Pid(libc::pid_t);
+
+/// A contiguous sub-UID/GID allocation: starting id and count.
+///
+/// Use `SubUidRange` or `SubGidRange` type aliases for convenience.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SubIdRange<T> {
+    pub start: T,
+    pub count: u32,
+}
+
+/// Convenience alias for sub-UID ranges.
+pub type SubUidRange = SubIdRange<Uid>;
+
+/// Convenience alias for sub-GID ranges.
+pub type SubGidRange = SubIdRange<Gid>;
+
+impl SubUidRange {
+    pub const fn from_raw(start: u32, count: u32) -> Self {
+        Self { start: Uid::from_raw(start), count }
+    }
+
+    pub const fn as_raw(&self) -> Option<(u32, u32)> {
+        Some((self.start.as_raw(), self.count))
+    }
+
+    pub const fn is_valid(&self) -> bool {
+        self.start.as_raw() > 0 && self.count > 0
+    }
+}
+
+impl SubGidRange {
+    pub const fn from_raw(start: u32, count: u32) -> Self {
+        Self { start: Gid::from_raw(start), count }
+    }
+
+    pub const fn as_raw(&self) -> Option<(u32, u32)> {
+        Some((self.start.as_raw(), self.count))
+    }
+
+    pub const fn is_valid(&self) -> bool {
+        self.start.as_raw() > 0 && self.count > 0
+    }
+}
 
 impl Uid {
     /// Creates a [`Uid`] from a raw numeric user ID.
@@ -112,6 +158,28 @@ pub fn getppid() -> Pid {
     Pid(unsafe { libc::getppid() })
 }
 
+/// Returns the invoking user ID, accounting for `sudo` invocation.
+/// 
+/// This checks the `SUDO_UID` environment variable, which is set by `sudo` to the
+/// real UID of the user invoking `sudo`. If `SUDO_UID` is not set or cannot be
+/// parsed, this falls back to the current real UID.
+pub fn invoking_uid() -> Uid {
+    std::env::var_os("SUDO_UID")
+        .and_then(|s| s.to_string_lossy().parse::<u32>().ok())
+        .map(Uid::from_raw)
+        .unwrap_or_else(getuid)
+}
+
+/// Returns the invoking username, accounting for `sudo` invocation.
+///
+/// This checks the `SUDO_UID` environment variable to determine the real UID of the
+/// user invoking `sudo`, then looks up the corresponding username. If `SUDO_UID`
+/// is not set or cannot be parsed, this falls back to the username of the current real
+pub fn invoking_username() -> Option<String> {
+    let uid = invoking_uid();
+    username_by_uid(uid)
+}
+
 /// Looks up a username by UID.
 ///
 /// Returns `None` if the UID cannot be resolved.
@@ -183,6 +251,76 @@ pub fn primary_gid_by_uid(uid: Uid) -> Option<Gid> {
     }
 
     unsafe { Some(Gid((*passwd).pw_gid)) }
+}
+
+/// Looks up a subuid range by username from `/etc/subuid`.
+///
+/// The file format is `name:start:count` (for example, `alice:100000:65536`).
+/// Returns `Some((start_uid, count))` on success, or `None` if the username
+/// cannot be resolved, contains an interior NUL byte, the file cannot be read,
+/// or the line cannot be parsed.
+pub fn subuid_by_username(username: &str) -> Option<SubUidRange> {
+    let username = CString::new(username).ok()?;
+    let file = File::open(SUBUID_FILE).ok()?;
+    let reader = BufReader::new(file);
+
+    for line in reader.lines().map_while(Result::ok) {
+        let parts: Vec<&str> = line.split(':').collect();
+        if parts.len() != 3 {
+            continue;
+        }
+        if parts[0] == username.to_str().unwrap() {
+            if let (Ok(start), Ok(count)) = (parts[1].parse::<u32>(), parts[2].parse::<u32>()) {
+                return Some(SubUidRange { start: Uid::from_raw(start), count });
+            }
+        }
+    }
+
+    None
+}
+
+/// Looks up a subuid range by username from `/etc/subuid`.
+///
+/// This is a convenience wrapper around `subuid_by_username` that returns raw numeric values.
+/// Returns `Some((start_uid, count))` on success, or `None` if the username cannot be resolved,
+/// contains an interior NUL byte, the file cannot be read, or the line cannot be parsed.
+pub fn subuid_by_username_raw(username: &str) -> Option<(u32, u32)> {
+    subuid_by_username(username).and_then(|range| range.as_raw())
+}
+
+/// Looks up a subgid range by group name from `/etc/subgid`.
+///
+/// The file format is `name:start:count` (for example, `staff:100000:65536`).
+/// Returns `Some((start_gid, count))` on success, or `None` if the group name
+/// cannot be resolved, contains an interior NUL byte, the file cannot be read,
+/// or the line cannot be parsed.
+pub fn subgid_by_groupname(groupname: &str) -> Option<SubGidRange> {
+    let groupname = CString::new(groupname).ok()?;
+    let file = File::open(SUBGID_FILE).ok()?;
+    let reader = BufReader::new(file);
+
+    for line in reader.lines().map_while(Result::ok) {
+        let parts: Vec<&str> = line.split(':').collect();
+        if parts.len() != 3 {
+            continue;
+        }
+        if parts[0] == groupname.to_str().unwrap() {
+            if let (Ok(start), Ok(count)) = (parts[1].parse::<u32>(), parts[2].parse::<u32>()) {
+                return Some(SubGidRange { start: Gid::from_raw(start), count });
+            }
+        }
+    }
+
+    None
+}
+
+/// Looks up a subgid range by group name from `/etc/subgid`.
+/// This is a convenience wrapper around `subgid_by_groupname` that returns raw numeric values.
+/// Returns `Some((start_gid, count))` on success, or `None` if the group name
+/// cannot be resolved, contains an interior NUL byte, the file cannot be read,
+/// or the line cannot be parsed.
+pub fn subgid_by_groupname_raw(groupname: &str) -> Option<(u32, u32)> {
+    subgid_by_groupname(groupname).and_then(|range| range.as_raw())
 }
 
 /// Returns group names for a UID.
@@ -363,3 +501,5 @@ pub fn has_common_admin_group() -> bool {
 
     false
 }
+
+// TODO: add more functions as needed, create user/group 
