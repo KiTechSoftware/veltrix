@@ -155,7 +155,7 @@ pub fn user_log_dir(app_name: &str) -> Result<PathBuf> {
 
 /// Resolve the user's local `bin` directory, typically `~/.local/bin`.
 pub fn user_bin_dir() -> Result<PathBuf> {
-    Ok(home_dir()?.join(constants::BIN_DIR_NAME))
+    Ok(home_dir()?.join(".local").join(constants::BIN_DIR_NAME))
 }
 
 pub fn user_bin_path(bin_name: &str) -> Result<PathBuf> {
