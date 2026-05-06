@@ -21,6 +21,9 @@ fn build_tokio(spec: &CmdSpec) -> Command {
             cmd.arg("-g").arg(format!("#{gid}"));
         }
 
+        if let Some(current_dir) = &spec.current_dir {
+            cmd.current_dir(current_dir);
+        }
         cmd.arg("--");
         cmd.arg(&spec.program);
         cmd.args(&spec.args);
@@ -29,6 +32,10 @@ fn build_tokio(spec: &CmdSpec) -> Command {
 
     let mut cmd = Command::new(&spec.program);
     cmd.args(&spec.args);
+
+    if let Some(current_dir) = &spec.current_dir {
+        cmd.current_dir(current_dir);
+    }
 
     #[cfg(unix)]
     {

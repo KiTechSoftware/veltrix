@@ -48,6 +48,7 @@ where
             sudo: spec.sudo,
             uid: spec.uid,
             gid: spec.gid,
+            current_dir: spec.current_dir.clone(),
         },
         data,
     })

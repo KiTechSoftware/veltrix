@@ -24,6 +24,8 @@ pub struct PodmanUser {
 /// Podman CLI backend configuration.
 #[derive(Debug, Clone)]
 pub struct PodmanCliSpec {
+    /// Podman working directory.
+    pub current_dir: Option<PathBuf>,
     /// Podman executable name or path.
     pub binary: String,
     /// Whether to execute through `sudo`.
@@ -41,6 +43,7 @@ impl Default for PodmanCliSpec {
             sudo: false,
             uid: None,
             gid: None,
+            current_dir: None,
         }
     }
 }
@@ -54,6 +57,12 @@ impl PodmanCliSpec {
     /// Set the Podman executable name or path.
     pub fn binary(mut self, binary: impl Into<String>) -> Self {
         self.binary = binary.into();
+        self
+    }
+
+    /// Set the Podman working directory.
+    pub fn current_dir(mut self, current_dir: impl Into<PathBuf>) -> Self {
+        self.current_dir = Some(current_dir.into());
         self
     }
 
@@ -143,6 +152,8 @@ pub enum PodmanBackendUsed {
         uid: Option<u32>,
         /// Unix group ID used for execution.
         gid: Option<u32>,
+        /// Podman working directory.
+        current_dir: Option<PathBuf>,
     },
     /// Podman socket backend metadata.
     Socket {

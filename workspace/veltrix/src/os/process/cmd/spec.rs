@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 #[derive(Debug, Clone)]
 pub struct CmdSpec {
     pub program: String,
@@ -5,6 +7,7 @@ pub struct CmdSpec {
     pub sudo: bool,
     pub uid: Option<u32>,
     pub gid: Option<u32>,
+    pub current_dir: Option<PathBuf>,
 }
 
 impl CmdSpec {
@@ -15,6 +18,7 @@ impl CmdSpec {
             sudo: false,
             uid: None,
             gid: None,
+            current_dir: None,
         }
     }
 
@@ -46,6 +50,11 @@ impl CmdSpec {
 
     pub fn gid(mut self, gid: u32) -> Self {
         self.gid = Some(gid);
+        self
+    }
+
+    pub fn current_dir(mut self, current_dir: impl Into<PathBuf>) -> Self {
+        self.current_dir = Some(current_dir.into());
         self
     }
 }

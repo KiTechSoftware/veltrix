@@ -389,10 +389,12 @@ where
     Ok(PodmanResponse::new(
         data,
         PodmanBackendUsed::Cli {
+            
             binary: spec.binary.clone(),
             sudo: spec.sudo,
             uid: spec.uid,
             gid: spec.gid,
+            current_dir: spec.current_dir.clone(),
         },
     ))
 }
@@ -410,6 +412,7 @@ where
             sudo: spec.sudo,
             uid: spec.uid,
             gid: spec.gid,
+            current_dir: spec.current_dir.clone(),
         },
     ))
 }
@@ -427,6 +430,7 @@ where
             sudo: spec.sudo,
             uid: spec.uid,
             gid: spec.gid,
+            current_dir: spec.current_dir.clone(),
         },
     ))
 }
@@ -447,6 +451,7 @@ where
             sudo: spec.sudo,
             uid: spec.uid,
             gid: spec.gid,
+            current_dir: spec.current_dir.clone(),
         },
     ))
 }
@@ -462,6 +467,7 @@ where
         sudo: spec.sudo,
         uid: spec.uid,
         gid: spec.gid,
+        current_dir: spec.current_dir.clone(),
     }))
 }
 
@@ -500,6 +506,10 @@ pub(super) fn base_cmd(spec: &PodmanCliSpec) -> CmdSpec {
 
     if let Some(gid) = spec.gid {
         cmd = cmd.gid(gid);
+    }
+
+    if let Some(current_dir) = &spec.current_dir {
+        cmd = cmd.current_dir(current_dir);
     }
 
     cmd
