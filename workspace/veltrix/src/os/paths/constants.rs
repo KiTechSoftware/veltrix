@@ -42,6 +42,7 @@ pub const PATH_SYSTEM_DOC_DIR: &str = "/usr/share/doc";
 pub const PATH_SYSTEM_APPLICATIONS_DIR: &str = "/usr/share/applications";
 pub const PATH_SYSTEM_ICONS_DIR: &str = "/usr/share/icons";
 pub const PATH_SYSTEM_FONTS_DIR: &str = "/usr/share/fonts";
+pub const PATH_SYSTEM_SUDOERS_DIR: &str = "/etc/sudoers.d";
 
 // System files
 pub const PATH_SYSTEM_GROUPS_FILE: &str = "/etc/group";
