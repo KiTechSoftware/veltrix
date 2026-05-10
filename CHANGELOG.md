@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.7.3
+
+- Added `chown` features to `veltrix::os::unistd` for changing file ownership by UID/GID or username/groupname.
+- Added `PATH_SYSTEMD_SUDOERS_DIR` to `veltrix::os::paths` for the systemd sudoers drop-in directory.
+
 ## v0.7.2
 
 - Fixed a minor issue with path handling in `veltrix::os::paths`.
