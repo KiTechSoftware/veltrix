@@ -35,6 +35,11 @@ ldap = ["serde", "serde_json", "ldap3"]
 ldap-sasl = ["ldap", "ldap3"]
 ldap-gssapi = ["ldap-sasl", "ldap3/gssapi"]
 
+vpn = []
+vpn-wireguard = ["vpn"]
+vpn-openvpn = ["vpn"]
+vpn-full = ["vpn-wireguard", "vpn-openvpn"]
+
 data = []
 data-bools = ["data"]
 data-time = ["data"]
@@ -44,7 +49,7 @@ unistd = ["libc"]
 unicode = []
 unicode-emojis = ["unicode"]
 
-full = ["podman-full", "docker-full", "caddy", "systemd-dbus", "technitium", "ldap-gssapi", "data-full", "unistd", "unicode-emojis"]
+full = ["vpn-full", "podman-full", "docker-full", "caddy", "systemd-dbus", "technitium", "ldap-gssapi", "data-full", "unistd", "unicode-emojis"]
 
 [dependencies]
 thiserror = "2"

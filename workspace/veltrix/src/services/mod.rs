@@ -20,3 +20,6 @@ pub mod technitium;
 
 #[cfg(feature = "ldap")]
 pub mod ldap;
+
+#[cfg(feature = "vpn")]
+pub mod vpn;
